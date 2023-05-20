@@ -3,11 +3,7 @@ use json_canon::to_writer as canon_json_to_writer;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{
-    content::{Content, ContentHash},
-    id::MsgId,
-    signature::Signature,
-};
+use crate::{content::Content, content_hash::ContentHash, msg_id::MsgId, signature::Signature};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Msg {
