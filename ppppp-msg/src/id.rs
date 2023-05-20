@@ -1,18 +1,17 @@
-use base_x::{decode as b58decode, encode as b58encode, DecodeError as B58DecodeError};
 use blake3::Hash;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, str::FromStr};
 use thiserror::Error as ThisError;
 
-const BASE58_ALPHABET: &[u8; 58] = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+use crate::base58;
 
 #[derive(Debug, ThisError)]
 pub enum IdError {
     #[error("Failed to decode base58: {0}")]
-    DecodeBase58(#[from] B58DecodeError),
+    DecodeBase58(#[from] base58::DecodeError),
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(try_from = "String")]
 pub struct MsgId(Vec<u8>);
 
@@ -37,7 +36,8 @@ impl MsgId {
     }
 
     pub fn from_uri_str(uri_str: &str) -> Result<Self, IdError> {
-        let id_str = &uri_str[0..17];
+        let id_str = &uri_str[17..];
+        println!("{}", id_str);
         Self::from_id_str(id_str)
     }
 
@@ -52,11 +52,11 @@ impl MsgId {
     }
 
     fn encode_data(data: &[u8]) -> String {
-        b58encode(BASE58_ALPHABET as &[u8], data)
+        base58::encode(data)
     }
 
     fn decode_data(data_str: &str) -> Result<Vec<u8>, IdError> {
-        let data = b58decode(BASE58_ALPHABET as &[u8], data_str)?;
+        let data = base58::decode(data_str)?;
         Ok(data)
     }
 
@@ -101,8 +101,21 @@ impl AsRef<[u8]> for MsgId {
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
 
     #[test]
-    fn test() {}
+    fn test_msg_id_roundtrip() -> Result<(), IdError> {
+        let msg_id_str = "Cz1jtXr2oBrhk8czWiz6kH";
+        let msg_id = MsgId::from_id_str(msg_id_str)?;
+        assert_eq!(msg_id_str, msg_id.to_id_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_msg_uri_roundtrip() -> Result<(), IdError> {
+        let msg_uri_str = "ppppp:message/v1/Cz1jtXr2oBrhk8czWiz6kH";
+        let msg_id = MsgId::from_uri_str(msg_uri_str)?;
+        assert_eq!(msg_uri_str, msg_id.to_uri_string());
+        Ok(())
+    }
 }
