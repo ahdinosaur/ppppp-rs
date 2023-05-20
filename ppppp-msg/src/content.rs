@@ -18,6 +18,10 @@ impl Content {
 
         (ContentHash::from_hash(hash), size)
     }
+
+    pub fn is_null(&self) -> bool {
+        self.0.is_null()
+    }
 }
 
 impl From<Value> for Content {

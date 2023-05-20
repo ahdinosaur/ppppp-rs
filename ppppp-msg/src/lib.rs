@@ -5,3 +5,4 @@ pub mod key_id;
 pub mod msg;
 pub mod msg_id;
 pub mod signature;
+pub mod tangle;

@@ -11,7 +11,7 @@ pub enum ContentHashError {
     DecodeBase58(#[from] base58::DecodeError),
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(try_from = "String")]
 pub struct ContentHash(Vec<u8>);
 
