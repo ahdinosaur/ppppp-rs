@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    content::Content, content_hash::ContentHash, key_id::KeyId, msg_id::MsgId, signature::Signature,
+    content::Content, content_hash::ContentHash, author_id::AuthorId, msg_id::MsgId, signature::Signature,
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -45,7 +45,7 @@ pub struct MsgMetadata {
     #[serde(rename = "v")]
     version: u8,
     #[serde(rename = "who")]
-    key_id: KeyId,
+    author_id: AuthorId,
 }
 
 impl MsgMetadata {
@@ -69,8 +69,8 @@ impl MsgMetadata {
         &self.version
     }
 
-    pub fn key_id(&self) -> &KeyId {
-        &self.key_id
+    pub fn author_id(&self) -> &AuthorId {
+        &self.author_id
     }
 
     pub fn to_hash(&self) -> Hash {

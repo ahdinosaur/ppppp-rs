@@ -1,7 +1,7 @@
 use ed25519_dalek::ed25519::Error as Ed25519Error;
 use serde_json::Error as JsonError;
 
-use crate::{key_id::KeyId, msg::Msg, msg_id::MsgId, tangle::Tangle};
+use crate::{author_id::AuthorId, msg::Msg, msg_id::MsgId, tangle::Tangle};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -17,8 +17,8 @@ pub enum Error {
     MsgTanglesMissingTangleRootMsgId { root_msg_id: MsgId },
     #[error("msg content type doesn't match feed type: {content_type}")]
     MsgTypeDoesNotMatchFeedType { content_type: String },
-    #[error("msg key id doesn't match feed key id: {key_id}")]
-    MsgKeyIdDoesNotMatchFeedKeyId { key_id: KeyId },
+    #[error("msg key id doesn't match feed key id: {author_id}")]
+    MsgAuthorIdDoesNotMatchFeedAuthorId { author_id: AuthorId },
     #[error("depth of prev {prev_msg_id} is not lower")]
     TanglePrevDepthNotLower { prev_msg_id: MsgId },
     #[error("all prev are locally unknown")]
@@ -68,8 +68,8 @@ pub fn validate_signature(msg: &Msg) -> Result<(), Error> {
     let metadata = msg.metadata();
     let signature = msg.signature();
 
-    let key_id = metadata.key_id();
-    let pubkey = key_id.to_pubkey().map_err(Error::Pubkey)?;
+    let author_id = metadata.author_id();
+    let pubkey = author_id.to_pubkey().map_err(Error::Pubkey)?;
 
     let signable = json_canon::to_vec(metadata).map_err(Error::JsonCanon)?;
 
@@ -99,17 +99,17 @@ pub fn validate_tangle(
     let prev_msg_ids = msg_tangle.prev_msg_ids();
 
     if tangle.is_feed() {
-        let (feed_key_id, feed_content_type) = tangle.get_feed().unwrap();
+        let (feed_author_id, feed_content_type) = tangle.get_feed().unwrap();
         let content_type = metadata.content_type();
         if content_type != feed_content_type {
             return Err(Error::MsgTypeDoesNotMatchFeedType {
                 content_type: content_type.to_owned(),
             });
         }
-        let key_id = metadata.key_id();
-        if key_id != &feed_key_id {
-            return Err(Error::MsgKeyIdDoesNotMatchFeedKeyId {
-                key_id: key_id.clone(),
+        let author_id = metadata.author_id();
+        if author_id != &feed_author_id {
+            return Err(Error::MsgAuthorIdDoesNotMatchFeedAuthorId {
+                author_id: author_id.clone(),
             });
         }
     }

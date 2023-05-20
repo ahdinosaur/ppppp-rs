@@ -15,9 +15,9 @@ pub enum IdError {
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(try_from = "String")]
-pub struct KeyId(Vec<u8>);
+pub struct AuthorId(Vec<u8>);
 
-impl KeyId {
+impl AuthorId {
     pub fn from_pubkey(pubkey: PublicKey) -> Self {
         let bytes = pubkey.as_bytes();
         let vec = bytes.to_vec();
@@ -41,35 +41,35 @@ impl KeyId {
     }
 }
 
-impl TryFrom<String> for KeyId {
+impl TryFrom<String> for AuthorId {
     type Error = IdError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        KeyId::from_str(&value)
+        AuthorId::from_str(&value)
     }
 }
 
-impl FromStr for KeyId {
+impl FromStr for AuthorId {
     type Err = IdError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        KeyId::from_str(&s)
+        AuthorId::from_str(&s)
     }
 }
 
-impl From<&KeyId> for String {
-    fn from(value: &KeyId) -> String {
+impl From<&AuthorId> for String {
+    fn from(value: &AuthorId) -> String {
         value.to_string()
     }
 }
 
-impl Display for KeyId {
+impl Display for AuthorId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.to_string())
     }
 }
 
-impl AsRef<[u8]> for KeyId {
+impl AsRef<[u8]> for AuthorId {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
@@ -81,9 +81,9 @@ mod tests {
 
     #[test]
     fn test_msg_id_roundtrip() -> Result<(), IdError> {
-        let msg_id_str = "4mjQ5aJu378cEu6TksRG3uXAiKFiwGjYQtWAjfVjDAJW";
-        let msg_id = KeyId::from_str(msg_id_str)?;
-        assert_eq!(msg_id_str, msg_id.to_string());
+        let author_id_str = "4mjQ5aJu378cEu6TksRG3uXAiKFiwGjYQtWAjfVjDAJW";
+        let author_id = AuthorId::from_str(author_id_str)?;
+        assert_eq!(author_id_str, author_id.to_string());
         Ok(())
     }
 }

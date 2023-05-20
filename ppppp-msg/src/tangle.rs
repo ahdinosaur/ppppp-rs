@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{key_id::KeyId, msg::Msg, msg_id::MsgId};
+use crate::{author_id::AuthorId, msg::Msg, msg_id::MsgId};
 
 pub struct Tangle {
     root_msg_id: MsgId,
@@ -114,15 +114,15 @@ impl Tangle {
         }
     }
 
-    pub fn get_feed(&self) -> Option<(KeyId, String)> {
+    pub fn get_feed(&self) -> Option<(AuthorId, String)> {
         if !self.is_feed() {
             None
         } else {
             let root_msg = self.root_msg.as_ref().unwrap();
             let metadata = root_msg.metadata();
-            let key_id = metadata.key_id().clone();
+            let author_id = metadata.author_id().clone();
             let content_type = metadata.content_type().to_owned();
-            Some((key_id, content_type))
+            Some((author_id, content_type))
         }
     }
 
