@@ -1,6 +1,6 @@
-use ed25519_dalek::PublicKey;
+use ed25519_dalek::{ed25519::Error as Ed25519Error, PublicKey};
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom, fmt::Display, str::FromStr};
 use thiserror::Error as ThisError;
 
 use crate::base58;
@@ -9,6 +9,8 @@ use crate::base58;
 pub enum IdError {
     #[error("Failed to decode base58: {0}")]
     DecodeBase58(#[from] base58::DecodeError),
+    #[error("Failed to convert to public key: {0}")]
+    ToPubkey(#[source] Ed25519Error),
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
@@ -26,6 +28,11 @@ impl KeyId {
         let data = base58::decode(id_str)?;
         assert_eq!(data.len(), 32);
         Ok(Self(data))
+    }
+
+    pub fn to_pubkey(&self) -> Result<PublicKey, Ed25519Error> {
+        let bytes = &self.0;
+        PublicKey::from_bytes(bytes)
     }
 
     pub fn to_string(&self) -> String {
@@ -56,9 +63,9 @@ impl From<&KeyId> for String {
     }
 }
 
-impl ToString for KeyId {
-    fn to_string(&self) -> String {
-        self.to_string()
+impl Display for KeyId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
     }
 }
 

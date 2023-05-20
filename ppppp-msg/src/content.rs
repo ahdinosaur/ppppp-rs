@@ -5,8 +5,12 @@ use serde_json::Value;
 
 use crate::content_hash::ContentHash;
 
+#[derive(Copy, Clone, Debug, thiserror::Error)]
+#[error("invalid content, must be JSON object, string, or null")]
+pub struct Error {}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(from = "Value")]
+#[serde(try_from = "Value")]
 pub struct Content(Value);
 
 impl Content {
@@ -24,9 +28,15 @@ impl Content {
     }
 }
 
-impl From<Value> for Content {
-    fn from(value: Value) -> Self {
-        Self(value)
+impl TryFrom<Value> for Content {
+    type Error = Error;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        if value.is_object() || value.is_string() || value.is_null() {
+            Ok(Self(value))
+        } else {
+            Err(Error {})
+        }
     }
 }
 
@@ -43,7 +53,7 @@ mod tests {
         let value = json!({
             "text": "hello world!"
         });
-        let content: Content = value.into();
+        let content: Content = value.try_into().unwrap();
         let (hash, size): (ContentHash, _) = content.to_hash();
         assert_eq!(hash.to_string(), "Cz1jtXr2oBrhk8czWiz6kH");
         assert_eq!(size, 23);

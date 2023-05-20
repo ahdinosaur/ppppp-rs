@@ -38,7 +38,7 @@ pub struct MsgMetadata {
     #[serde(rename = "hash")]
     content_hash: Option<ContentHash>,
     #[serde(rename = "size")]
-    content_size: u32,
+    content_size: u64,
     tangles: MsgTangles,
     #[serde(rename = "type")]
     content_type: String,
@@ -53,7 +53,7 @@ impl MsgMetadata {
         &self.content_hash
     }
 
-    pub fn content_size(&self) -> &u32 {
+    pub fn content_size(&self) -> &u64 {
         &self.content_size
     }
 
@@ -63,6 +63,10 @@ impl MsgMetadata {
 
     pub fn content_type(&self) -> &str {
         &self.content_type
+    }
+
+    pub fn version(&self) -> &u8 {
+        &self.version
     }
 
     pub fn key_id(&self) -> &KeyId {

@@ -25,17 +25,17 @@ impl Tangle {
         }
     }
 
-    pub fn add(&mut self, msg_id: MsgId, msg: Msg) {
-        if msg_id == self.root_msg_id && self.root_msg.is_none() {
+    pub fn add(&mut self, msg_id: &MsgId, msg: &Msg) {
+        if msg_id == &self.root_msg_id && self.root_msg.is_none() {
             self.tips.insert(msg_id.clone());
             self.per_depth.insert(0, BTreeSet::from([msg_id.clone()]));
             self.depth.insert(msg_id.clone(), 0);
-            self.root_msg = Some(msg);
+            self.root_msg = Some(msg.clone());
             return;
         }
 
         let tangles = msg.metadata().tangles();
-        if msg_id != self.root_msg_id && tangles.contains_key(&self.root_msg_id) {
+        if msg_id != &self.root_msg_id && tangles.contains_key(&self.root_msg_id) {
             self.tips.insert(msg_id.clone());
 
             let tangle = tangles.get(&self.root_msg_id).unwrap();
@@ -95,11 +95,11 @@ impl Tangle {
         self.get_all_at_depth(lipmaa_depth).clone()
     }
 
-    pub fn has(&self, msg_id: MsgId) -> bool {
+    pub fn has(&self, msg_id: &MsgId) -> bool {
         self.depth.contains_key(&msg_id)
     }
 
-    pub fn get_depth(&self, msg_id: MsgId) -> Option<u64> {
+    pub fn get_depth(&self, msg_id: &MsgId) -> Option<u64> {
         self.depth.get(&msg_id).cloned()
     }
 
@@ -114,17 +114,19 @@ impl Tangle {
         }
     }
 
-    pub fn get_feed(&self) -> Option<KeyId> {
+    pub fn get_feed(&self) -> Option<(KeyId, String)> {
         if !self.is_feed() {
             None
         } else {
             let root_msg = self.root_msg.as_ref().unwrap();
             let metadata = root_msg.metadata();
-            Some(metadata.key_id().clone())
+            let key_id = metadata.key_id().clone();
+            let content_type = metadata.content_type().to_owned();
+            Some((key_id, content_type))
         }
     }
 
-    pub fn shortest_path_to_root(&self, msg_id: MsgId) -> Vec<MsgId> {
+    pub fn shortest_path_to_root(&self, msg_id: &MsgId) -> Vec<MsgId> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
             return Vec::new();
@@ -138,13 +140,13 @@ impl Tangle {
                 .min_by_key(|&(_, depth)| depth)
                 .unwrap();
             path.push(min_msg_id.clone());
-            current = min_msg_id.clone();
+            current = min_msg_id;
         }
         path
     }
 
-    pub fn precedes(&self, a: MsgId, b: MsgId) -> bool {
-        if a == b || b == self.root_msg_id {
+    pub fn precedes(&self, a: &MsgId, b: &MsgId) -> bool {
+        if a == b || b == &self.root_msg_id {
             return false;
         }
         let mut to_check = vec![b];
@@ -153,7 +155,7 @@ impl Tangle {
                 if prev_msg_ids.contains(&a) {
                     return true;
                 }
-                to_check.extend(prev_msg_ids.iter().cloned());
+                to_check.extend(prev_msg_ids.iter());
             }
         }
         false

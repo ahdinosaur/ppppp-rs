@@ -1,6 +1,6 @@
 use blake3::Hash;
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom, fmt::Display, str::FromStr};
 use thiserror::Error as ThisError;
 
 use crate::base58;
@@ -55,9 +55,9 @@ impl From<&ContentHash> for String {
     }
 }
 
-impl ToString for ContentHash {
-    fn to_string(&self) -> String {
-        self.to_string()
+impl Display for ContentHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
     }
 }
 

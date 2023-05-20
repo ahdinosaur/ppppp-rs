@@ -6,3 +6,4 @@ pub mod msg;
 pub mod msg_id;
 pub mod signature;
 pub mod tangle;
+pub mod validate;

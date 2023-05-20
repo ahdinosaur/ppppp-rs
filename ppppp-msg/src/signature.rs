@@ -29,6 +29,11 @@ impl Signature {
         Ok(Self(data))
     }
 
+    pub fn to_signature(&self) -> Ed25519Signature {
+        let bytes = self.0.as_ref();
+        Ed25519Signature::from_bytes(bytes).unwrap()
+    }
+
     pub fn to_string(&self) -> String {
         let data = self.0.as_slice();
         format!("{}", Self::encode_data(data))
