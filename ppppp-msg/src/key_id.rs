@@ -1,4 +1,4 @@
-use blake3::Hash;
+use ed25519_dalek::PublicKey;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, str::FromStr};
 use thiserror::Error as ThisError;
@@ -13,17 +13,18 @@ pub enum IdError {
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(try_from = "String")]
-pub struct MsgId(Vec<u8>);
+pub struct KeyId(Vec<u8>);
 
-impl MsgId {
-    pub fn from_hash(hash: Hash) -> Self {
-        let bytes = hash.as_bytes();
-        Self(Vec::from(&bytes[0..16]))
+impl KeyId {
+    pub fn from_pubkey(pubkey: PublicKey) -> Self {
+        let bytes = pubkey.as_bytes();
+        let vec = bytes.to_vec();
+        Self(vec)
     }
 
     pub fn from_str(id_str: &str) -> Result<Self, IdError> {
         let data = base58::decode(id_str)?;
-        assert_eq!(data.len(), 16);
+        assert_eq!(data.len(), 32);
         Ok(Self(data))
     }
 
@@ -33,35 +34,35 @@ impl MsgId {
     }
 }
 
-impl TryFrom<String> for MsgId {
+impl TryFrom<String> for KeyId {
     type Error = IdError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        MsgId::from_str(&value)
+        KeyId::from_str(&value)
     }
 }
 
-impl FromStr for MsgId {
+impl FromStr for KeyId {
     type Err = IdError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        MsgId::from_str(&s)
+        KeyId::from_str(&s)
     }
 }
 
-impl From<&MsgId> for String {
-    fn from(value: &MsgId) -> String {
+impl From<&KeyId> for String {
+    fn from(value: &KeyId) -> String {
         value.to_string()
     }
 }
 
-impl ToString for MsgId {
+impl ToString for KeyId {
     fn to_string(&self) -> String {
         self.to_string()
     }
 }
 
-impl AsRef<[u8]> for MsgId {
+impl AsRef<[u8]> for KeyId {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
     }
@@ -73,8 +74,8 @@ mod tests {
 
     #[test]
     fn test_msg_id_roundtrip() -> Result<(), IdError> {
-        let msg_id_str = "Cz1jtXr2oBrhk8czWiz6kH";
-        let msg_id = MsgId::from_str(msg_id_str)?;
+        let msg_id_str = "4mjQ5aJu378cEu6TksRG3uXAiKFiwGjYQtWAjfVjDAJW";
+        let msg_id = KeyId::from_str(msg_id_str)?;
         assert_eq!(msg_id_str, msg_id.to_string());
         Ok(())
     }

@@ -22,23 +22,14 @@ impl ContentHash {
     }
 
     pub fn from_str(id_str: &str) -> Result<Self, ContentHashError> {
-        let data = Self::decode_data(id_str)?;
+        let data = base58::decode(id_str)?;
         assert_eq!(data.len(), 16);
         Ok(Self(data))
     }
 
     pub fn to_string(&self) -> String {
         let data = self.0.as_slice();
-        format!("{}", Self::encode_data(data))
-    }
-
-    fn encode_data(data: &[u8]) -> String {
         base58::encode(data)
-    }
-
-    fn decode_data(data_str: &str) -> Result<Vec<u8>, ContentHashError> {
-        let data = base58::decode(data_str)?;
-        Ok(data)
     }
 }
 
