@@ -74,11 +74,21 @@ pub trait DuplexServiceMethod {
     type SinkStream: Fn(Self::SinkInputStream) -> Self::SinkFuture;
 }
 
+pub enum ServiceMethod<Method> {
+    Sync(Method),
+    Async(Method),
+    Source(Method),
+    Sink(Method),
+    Duplex(Method),
+}
+
 pub struct Service<Manifest> {
     name: String,
     version: String,
-    manifest: Manifest,
+    methods: Vec<ServiceMethod>,
 }
+
+// register functions
 
 #[cfg(test)]
 mod tests {
