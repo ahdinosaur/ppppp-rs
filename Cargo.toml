@@ -1,4 +1,5 @@
 [workspace]
 members = [
-  "ppppp-msg"
+  "ppppp-msg",
+  "ppppp-service"
 ]
