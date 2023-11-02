@@ -15,8 +15,8 @@ use std::marker::PhantomData;
 mod pull;
 mod push;
 
-pub trait Source: futures_core::Stream {}
-pub trait Sink<Item>: futures_sink::Sink<Item> {}
+pub trait Source: futures::Stream {}
+pub trait Sink<Item>: futures::Sink<Item> {}
 pub struct Duplex<Src: Source, SnkItem, Snk: Sink<SnkItem>> {
     pub source: Src,
     pub sink: Snk,
