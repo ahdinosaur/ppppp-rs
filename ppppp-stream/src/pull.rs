@@ -1,5 +1,5 @@
 use futures::StreamExt;
-use napi::bindgen_prelude::*;
+use napi::bindgen_prelude::Error;
 
 use crate::Source;
 

@@ -1,4 +1,4 @@
-use napi::bindgen_prelude::*;
+use napi::bindgen_prelude::Error;
 
 use crate::{Sink, Source};
 
