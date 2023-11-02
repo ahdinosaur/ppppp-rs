@@ -8,15 +8,19 @@ pub struct Duplex<Src: Source, SnkItem, Snk: Sink<SnkItem>> {
     sink_item: PhantomData<SnkItem>,
 }
 
-pub enum EndState {
+pub enum EndState<Error> {
     Nil,
-    Error(Box<dyn Error>),
+    Error(Error),
     Done,
 }
-pub trait PullSource<Output, OutputCb: Fn(EndState, Output)>: Fn(EndState, OutputCb) {}
-pub trait PullSink<Input, InputCb: Fn(EndState, Input), Src: PullSource<Input, InputCb>>:
+pub trait PullSource<ReaderError, Output, ReadError, OutputCb: Fn(EndState<ReadError>, Output)>: Fn(EndState<ReaderError>, OutputCb) {}
+pub trait PullSink<ReaderError, Input, ReadError, InputCb: Fn(EndState<ReaderError>, Input), Src: PullSource<ReaderError, Input, ReadError, InputCb>>:
     Fn(Src)
 {
+}
+
+fn to_pull_source<Output, ReadError, Src: Source<Item = Output>>(source: Src): PullSource<Box<dyn Error>, Output, ReadError > {
+
 }
 
 /*
