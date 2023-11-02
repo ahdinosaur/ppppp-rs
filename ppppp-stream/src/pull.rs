@@ -29,18 +29,19 @@ pub enum EndState {
     Done,
 }
 pub type End = Option<EndState>;
-type PullSource<Value> = dyn Fn(End, dyn Fn(End, Option<Value>));
+type PullSource<Value> = Box<dyn FnMut(End, Box<dyn Fn(End, Option<Value>)>)>;
 
-fn to_pull_source<Value, Src: Source<Item = Result<Value, Error>>>(
-    source: Src,
+fn to_pull_source<Value, Src: Source<Item = Result<Value, Error>> + Unpin + 'static>(
+    mut source: Src,
 ) -> PullSource<Value> {
-    |end, cb| {
-        tokio::spawn(async {
+    Box::new(move |end, cb| {
+        let source = &mut source;
+        async {
             match source.next().await {
-                Some(Ok(value)) => cb(None, value),
+                Some(Ok(value)) => cb(None, Some(value)),
                 Some(Err(err)) => cb(Some(EndState::Error(err)), None),
                 None => cb(Some(EndState::Done), None),
             }
-        })
-    }
+        };
+    })
 }
