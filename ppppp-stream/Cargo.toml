@@ -8,4 +8,5 @@ edition = "2021"
 [dependencies]
 futures-core = "0.3.29"
 futures-sink = "0.3.29"
+napi = "2.13.3"
 tokio = { version = "1.33.0", features = ["io-util"] }

@@ -1,4 +1,18 @@
+// - https://docs.rs/tokio-util/latest/tokio_util/io/index.html
+// - https://github.com/napi-rs/napi-rs/tree/main/examples/napi
+// - https://github.com/MattiasBuelens/wasm-streams/blob/main/src/readable/mod.rs
+//
+//
+// NOTES:
+//
+// - two types of streams: object streams and buffer streams
+// - four types of streams: source, sink, through, and duplex
+//
+// - maybe start where JS interop is in JavaScript? so we just export Rust stream interfaces.
+//
 use std::{error::Error, marker::PhantomData};
+
+mod pull;
 
 pub trait Source: futures_core::Stream {}
 pub trait Sink<Item>: futures_sink::Sink<Item> {}
@@ -6,21 +20,6 @@ pub struct Duplex<Src: Source, SnkItem, Snk: Sink<SnkItem>> {
     pub source: Src,
     pub sink: Snk,
     sink_item: PhantomData<SnkItem>,
-}
-
-pub enum EndState<Error> {
-    Nil,
-    Error(Error),
-    Done,
-}
-pub trait PullSource<ReaderError, Output, ReadError, OutputCb: Fn(EndState<ReadError>, Output)>: Fn(EndState<ReaderError>, OutputCb) {}
-pub trait PullSink<ReaderError, Input, ReadError, InputCb: Fn(EndState<ReaderError>, Input), Src: PullSource<ReaderError, Input, ReadError, InputCb>>:
-    Fn(Src)
-{
-}
-
-fn to_pull_source<Output, ReadError, Src: Source<Item = Output>>(source: Src): PullSource<Box<dyn Error>, Output, ReadError > {
-
 }
 
 /*
