@@ -1,7 +1,10 @@
+use std::task::Poll;
+
 use napi::bindgen_prelude::*;
 
-use crate::SourceStream;
+use crate::Source;
 
+/*
 pub enum EndState<Error> {
     Error(Error),
     Done,
@@ -20,22 +23,24 @@ pub trait PullSink<
 >: Fn(Src)
 {
 }
+*/
 
-fn to_pull_source<
-    ReadData,
-    ReadError,
-    Src: SourceStream<Item = Result<ReadData, ReadError>>,
-    ReadCb: Fn(End<ReadError>, ReadData),
->(
+pub enum EndState {
+    Error(Error),
+    Done,
+}
+pub type End = Option<EndState>;
+type PullSource<Value> = dyn Fn(End, dyn Fn(End, Option<Value>));
+
+fn to_pull_source<Value, Src: Source<Item = Result<Value, Error>>>(
     source: Src,
-) -> impl PullSource<Error, ReadData, ReadError, ReadCb>
-where
-    ReadError: AsRef<str>,
-{
-    |end, cb| {
-        if let Some(EndState::Error(err)) | Some(EndState::Done) = end {
-            return cb(end);
-        };
-        cb(None, 0);
+) -> PullSource<Value> {
+    |end, cb| match source.poll_next() {
+        Poll::Pending => {}
+        Poll::Ready(Some(res)) => match res {
+            Ok(value) => cb(None, value),
+            Err(err) => cb(Some(EndState::Error(err)), None),
+        },
+        Poll::Ready(None) => cb(Some(EndState::Done), None),
     }
 }

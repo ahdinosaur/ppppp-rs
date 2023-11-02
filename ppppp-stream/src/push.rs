@@ -1,9 +1,9 @@
-use napi::bindgen_prelude::*;
+use napi::bindgen_prelude::Error as JsError;
 
 use crate::{Sink, Source};
 
-enum EndState<Error> {
-    Error(Error),
+enum EndState {
+    Error(JsError),
     Done,
 }
 
@@ -22,7 +22,7 @@ where
     Src: Source<Value = Result<Value, Error>>,
 {
     fn new(source: Src) {}
-    fn pipe(sink: PushSink<Value = Result<Value, Error>>) {}
+    fn pipe(sink: PushSink<Value = Result<Value, JsError>>) {}
     fn resume() {}
     fn abort() {}
 }
