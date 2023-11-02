@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 futures = "0.3.29"
-napi = "2.13.3"
+napi = { version = "2.13.3", features = ["tokio_rt"] }
 tokio = { version = "1.33.0", features = ["rt", "io-util"] }
