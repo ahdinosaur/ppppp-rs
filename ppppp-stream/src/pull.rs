@@ -1,13 +1,13 @@
 use napi::bindgen_prelude::*;
 
-use crate::Source;
+use crate::SourceStream;
 
 pub enum EndState<Error> {
     Error(Error),
     Done,
 }
 pub type End<Error> = Option<EndState<Error>>;
-pub trait PullSource<ReaderError, ReadData, ReadError, ReadCb: Fn(End<ReadError>, ReadData)>:
+pub trait PullSource<ReaderError, ReadData, ReadError, ReadCb: Fn(End<ReadError>, Option<ReadData>)>:
     Fn(End<ReaderError>, ReadCb)
 {
 }
@@ -24,7 +24,7 @@ pub trait PullSink<
 fn to_pull_source<
     ReadData,
     ReadError,
-    Src: Source<Item = Result<ReadData, ReadError>>,
+    Src: SourceStream<Item = Result<ReadData, ReadError>>,
     ReadCb: Fn(End<ReadError>, ReadData),
 >(
     source: Src,

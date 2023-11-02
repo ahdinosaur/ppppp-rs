@@ -10,9 +10,10 @@
 //
 // - maybe start where JS interop is in JavaScript? so we just export Rust stream interfaces.
 //
-use std::{error::Error, marker::PhantomData};
+use std::marker::PhantomData;
 
 mod pull;
+mod push;
 
 pub trait Source: futures_core::Stream {}
 pub trait Sink<Item>: futures_sink::Sink<Item> {}
@@ -21,7 +22,3 @@ pub struct Duplex<Src: Source, SnkItem, Snk: Sink<SnkItem>> {
     pub sink: Snk,
     sink_item: PhantomData<SnkItem>,
 }
-
-/*
-pub type PullSource<Output> = dyn Fn(EndState, dyn Fn(EndState, Output));
-*/
