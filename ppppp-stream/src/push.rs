@@ -1,44 +1,32 @@
-use napi::bindgen_prelude::Error as JsError;
+use napi::bindgen_prelude::*;
 
 use crate::{Sink, Source};
 
 enum EndState {
-    Error(JsError),
+    Error(Error),
     Done,
 }
 
 // pub trait SourceStream: futures_core::Stream {}
 // pub trait SinkStream<Item>: futures_sink::Sink<Item> {}
 
-pub struct PushSource<Value, Error, Src>
-where
-    Src: Source<Value = Result<Value, Error>>,
-{
-    source: Src,
+pub struct PushSource<Value> {
+    source: Box<dyn Source<Item = Result<Value, Error>>>,
 }
 
-impl<Value, Error, Src> PushSource<Value, Error, Src>
-where
-    Src: Source<Value = Result<Value, Error>>,
-{
-    fn new(source: Src) {}
-    fn pipe(sink: PushSink<Value = Result<Value, JsError>>) {}
+impl<Value> PushSource<Value> {
+    fn new(source: impl Source<Item = Result<Value, Error>>) {}
+    fn pipe(sink: PushSink<Value>) {}
     fn resume() {}
     fn abort() {}
 }
 
-pub struct PushSink<Value, Error, Snk>
-where
-    Snk: Sink<Result<Value, Error>>,
-{
-    sink: Snk,
+pub struct PushSink<Value> {
+    sink: Box<dyn Sink<Value, Error = Error>>,
 }
 
-impl<Value, Error, Snk> PushSink<Value, Error, Snk>
-where
-    Snk: Sink<Result<Value, Error>>,
-{
-    fn new(sink: Snk) {}
+impl<Value> PushSink<Value> {
+    fn new(sink: impl Sink<Value, Error = Error>) {}
     fn write(value: Value) {}
     fn end() {}
     fn abort() {}
