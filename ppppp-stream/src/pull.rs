@@ -32,7 +32,6 @@ pub enum EndState {
     Done,
 }
 pub type End = Option<EndState>;
-// type PullSource<Value> = Box<dyn Fn(End, Box<dyn Fn(End, Option<Value>) + Send>)>;
 
 pub struct PullSource<Src> {
     source: Src,
@@ -56,7 +55,7 @@ where
     Src: Source<Item = Result<Value, Error>> + Send + 'static,
     Value: Debug,
 {
-    fn read<Cb>(self, end: End, cb: Cb)
+    fn read<Cb>(&self, end: End, cb: Cb)
     where
         Cb: Fn(End, Option<Value>) + Unpin + Send + 'static,
     {
@@ -81,30 +80,14 @@ where
 }
 
 /*
-fn to_pull_source<
-    Value,
-    Src: Source<Item = Result<Value, Error>> + Unpin + Send + Sync + 'static,
->(
-    source: Src,
-) -> PullSource<Value> {
-    Box::new(move |end, cb| {
-        if let Some(end_state) = end {
-            match end_state {
-                EndState::Error(err) => cb(Some(EndState::Error(err)), None),
-                EndState::Done => cb(Some(EndState::Done), None),
-            };
-            return;
-        }
+type PullSourceFn<Value> = Box<dyn Fn(End, Box<dyn Fn(End, Option<Value>) + Send>)>;
 
-        pin_mut!(source);
-
-        spawn(async move {
-            match source.next().await {
-                Some(Ok(value)) => cb(None, Some(value)),
-                Some(Err(err)) => cb(Some(EndState::Error(err)), None),
-                None => cb(Some(EndState::Done), None),
-            }
-        });
-    })
+fn to_pull_source<Value, Src>(source: Src) -> PullSourceFn<Value>
+where
+    Value: Debug,
+    Src: Source<Item = Result<Value, Error>> + Send + 'static,
+{
+    let pull_source = PullSource::new(source);
+    Box::new(move |end, cb| pull_source.read(end, cb))
 }
 */
