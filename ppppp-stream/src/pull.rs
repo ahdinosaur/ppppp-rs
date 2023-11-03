@@ -1,4 +1,4 @@
-use futures::StreamExt;
+use futures::{pin_mut, StreamExt};
 use napi::bindgen_prelude::{spawn, Error};
 
 use crate::Source;
@@ -29,14 +29,26 @@ pub enum EndState {
     Done,
 }
 pub type End = Option<EndState>;
-type PullSource<Value> = Box<dyn FnMut(End, Box<dyn Fn(End, Option<Value>)>)>;
+type PullSource<Value> = Box<dyn Fn(End, Box<dyn Fn(End, Option<Value>) + Send>)>;
 
-fn to_pull_source<Value, Src: Source<Item = Result<Value, Error>> + Unpin + Send + 'static>(
-    mut source: Src,
+fn to_pull_source<
+    Value,
+    Src: Source<Item = Result<Value, Error>> + Unpin + Send + Sync + 'static,
+>(
+    source: Src,
 ) -> PullSource<Value> {
     Box::new(move |end, cb| {
-        let source = &mut source;
-        spawn(async {
+        if let Some(end_state) = end {
+            match end_state {
+                EndState::Error(err) => cb(Some(EndState::Error(err)), None),
+                EndState::Done => cb(Some(EndState::Done), None),
+            };
+            return;
+        }
+
+        pin_mut!(source);
+
+        spawn(async move {
             match source.next().await {
                 Some(Ok(value)) => cb(None, Some(value)),
                 Some(Err(err)) => cb(Some(EndState::Error(err)), None),
