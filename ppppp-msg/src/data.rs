@@ -3,24 +3,24 @@ use json_canon::to_writer as canon_json_to_writer;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::content_hash::ContentHash;
+use crate::data_hash::DataHash;
 
 #[derive(Copy, Clone, Debug, thiserror::Error)]
-#[error("invalid content, must be JSON object, string, or null")]
+#[error("invalid data, must be JSON object, string, or null")]
 pub struct Error {}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(try_from = "Value")]
-pub struct Content(Value);
+pub struct Data(Value);
 
-impl Content {
-    pub fn to_hash(&self) -> (ContentHash, u64) {
+impl Data {
+    pub fn to_hash(&self) -> (DataHash, u64) {
         let mut hasher = Hasher::new();
         canon_json_to_writer(&mut hasher, &self.0).unwrap();
         let hash = hasher.finalize();
         let size = hasher.count();
 
-        (ContentHash::from_hash(hash), size)
+        (DataHash::from_hash(hash), size)
     }
 
     pub fn is_null(&self) -> bool {
@@ -28,7 +28,7 @@ impl Content {
     }
 }
 
-impl TryFrom<Value> for Content {
+impl TryFrom<Value> for Data {
     type Error = Error;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
@@ -44,7 +44,7 @@ impl TryFrom<Value> for Content {
 mod tests {
     use serde_json::json;
 
-    use crate::content::ContentHash;
+    use crate::data::DataHash;
 
     use super::*;
 
@@ -53,8 +53,8 @@ mod tests {
         let value = json!({
             "text": "hello world!"
         });
-        let content: Content = value.try_into().unwrap();
-        let (hash, size): (ContentHash, _) = content.to_hash();
+        let data: Data = value.try_into().unwrap();
+        let (hash, size): (DataHash, _) = data.to_hash();
         assert_eq!(hash.to_string(), "Cz1jtXr2oBrhk8czWiz6kH");
         assert_eq!(size, 23);
     }

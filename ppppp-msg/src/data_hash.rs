@@ -1,27 +1,26 @@
 use blake3::Hash;
+use ppppp_base58 as base58;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, fmt::Display, str::FromStr};
 use thiserror::Error as ThisError;
 
-use crate::base58;
-
 #[derive(Debug, ThisError)]
-pub enum IdError {
+pub enum DataHashError {
     #[error("Failed to decode base58: {0}")]
     DecodeBase58(#[from] base58::DecodeError),
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(try_from = "String")]
-pub struct MsgId(Vec<u8>);
+pub struct DataHash(Vec<u8>);
 
-impl MsgId {
+impl DataHash {
     pub fn from_hash(hash: Hash) -> Self {
         let bytes = hash.as_bytes();
         Self(Vec::from(&bytes[0..16]))
     }
 
-    pub fn from_str(id_str: &str) -> Result<Self, IdError> {
+    pub fn from_str(id_str: &str) -> Result<Self, DataHashError> {
         let data = base58::decode(id_str)?;
         assert_eq!(data.len(), 16);
         Ok(Self(data))
@@ -33,49 +32,36 @@ impl MsgId {
     }
 }
 
-impl TryFrom<String> for MsgId {
-    type Error = IdError;
+impl TryFrom<String> for DataHash {
+    type Error = DataHashError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        MsgId::from_str(&value)
+        DataHash::from_str(&value)
     }
 }
 
-impl FromStr for MsgId {
-    type Err = IdError;
+impl FromStr for DataHash {
+    type Err = DataHashError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        MsgId::from_str(&s)
+        DataHash::from_str(&s)
     }
 }
 
-impl From<&MsgId> for String {
-    fn from(value: &MsgId) -> String {
+impl From<&DataHash> for String {
+    fn from(value: &DataHash) -> String {
         value.to_string()
     }
 }
 
-impl Display for MsgId {
+impl Display for DataHash {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.to_string())
     }
 }
 
-impl AsRef<[u8]> for MsgId {
+impl AsRef<[u8]> for DataHash {
     fn as_ref(&self) -> &[u8] {
         self.0.as_ref()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_msg_id_roundtrip() -> Result<(), IdError> {
-        let msg_id_str = "Cz1jtXr2oBrhk8czWiz6kH";
-        let msg_id = MsgId::from_str(msg_id_str)?;
-        assert_eq!(msg_id_str, msg_id.to_string());
-        Ok(())
     }
 }

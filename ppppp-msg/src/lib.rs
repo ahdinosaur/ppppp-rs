@@ -1,9 +1,9 @@
-pub mod author_id;
-pub mod base58;
-pub mod content;
-pub mod content_hash;
+pub mod account_id;
+pub mod data;
+pub mod data_hash;
+pub mod domain;
 pub mod msg;
-pub mod msg_id;
+pub mod msg_hash;
 pub mod signature;
 pub mod tangle;
 pub mod validate;

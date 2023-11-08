@@ -1,71 +1,71 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{author_id::AuthorId, msg::Msg, msg_id::MsgId};
+use crate::{author_id::AuthorId, msg::Msg, msg_hash::MsgHash};
 
 pub struct Tangle {
-    root_msg_id: MsgId,
+    root_msg_hash: MsgHash,
     max_depth: u64,
     root_msg: Option<Msg>,
-    tips: BTreeSet<MsgId>,
-    prev_msg_ids: BTreeMap<MsgId, BTreeSet<MsgId>>,
-    depth: BTreeMap<MsgId, u64>,
-    per_depth: BTreeMap<u64, BTreeSet<MsgId>>,
+    tips: BTreeSet<MsgHash>,
+    prev_msg_hashs: BTreeMap<MsgHash, BTreeSet<MsgHash>>,
+    depth: BTreeMap<MsgHash, u64>,
+    per_depth: BTreeMap<u64, BTreeSet<MsgHash>>,
 }
 
 impl Tangle {
-    pub fn new(root_msg_id: MsgId) -> Self {
+    pub fn new(root_msg_hash: MsgHash) -> Self {
         Self {
-            root_msg_id,
+            root_msg_hash,
             max_depth: 0,
             root_msg: None,
             tips: BTreeSet::new(),
-            prev_msg_ids: BTreeMap::new(),
+            prev_msg_hashs: BTreeMap::new(),
             depth: BTreeMap::new(),
             per_depth: BTreeMap::new(),
         }
     }
 
-    pub fn add(&mut self, msg_id: &MsgId, msg: &Msg) {
-        if msg_id == &self.root_msg_id && self.root_msg.is_none() {
-            self.tips.insert(msg_id.clone());
-            self.per_depth.insert(0, BTreeSet::from([msg_id.clone()]));
-            self.depth.insert(msg_id.clone(), 0);
+    pub fn add(&mut self, msg_hash: &MsgHash, msg: &Msg) {
+        if msg_hash == &self.root_msg_hash && self.root_msg.is_none() {
+            self.tips.insert(msg_hash.clone());
+            self.per_depth.insert(0, BTreeSet::from([msg_hash.clone()]));
+            self.depth.insert(msg_hash.clone(), 0);
             self.root_msg = Some(msg.clone());
             return;
         }
 
         let tangles = msg.metadata().tangles();
-        if msg_id != &self.root_msg_id && tangles.contains_key(&self.root_msg_id) {
-            self.tips.insert(msg_id.clone());
+        if msg_hash != &self.root_msg_hash && tangles.contains_key(&self.root_msg_hash) {
+            self.tips.insert(msg_hash.clone());
 
-            let tangle = tangles.get(&self.root_msg_id).unwrap();
-            let prev_msg_ids = tangle.prev_msg_ids();
-            for prev_msg_id in prev_msg_ids.clone() {
-                self.tips.remove(&prev_msg_id);
+            let tangle = tangles.get(&self.root_msg_hash).unwrap();
+            let prev_msg_hashs = tangle.prev_msg_hashs();
+            for prev_msg_hash in prev_msg_hashs.clone() {
+                self.tips.remove(&prev_msg_hash);
             }
-            self.prev_msg_ids
-                .insert(msg_id.clone(), prev_msg_ids.clone());
+            self.prev_msg_hashs
+                .insert(msg_hash.clone(), prev_msg_hashs.clone());
 
-            let tangle = tangles.get(&self.root_msg_id).unwrap();
+            let tangle = tangles.get(&self.root_msg_hash).unwrap();
             let depth = tangle.depth().clone();
             if depth > self.max_depth {
                 self.max_depth = depth;
             }
-            self.depth.insert(msg_id.clone(), depth);
+            self.depth.insert(msg_hash.clone(), depth);
 
             let at_depth = self.per_depth.entry(depth).or_insert_with(BTreeSet::new);
-            at_depth.insert(msg_id.clone());
+            at_depth.insert(msg_hash.clone());
         }
     }
 
-    fn get_all_at_depth(&self, depth: u64) -> BTreeSet<MsgId> {
+    fn get_all_at_depth(&self, depth: u64) -> BTreeSet<MsgHash> {
         self.per_depth
             .get(&depth)
             .cloned()
             .unwrap_or(BTreeSet::new())
     }
 
-    pub fn topo_sort(&self) -> Vec<MsgId> {
+    pub fn topo_sort(&self) -> Vec<MsgHash> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
             return Vec::new();
@@ -78,7 +78,7 @@ impl Tangle {
         sorted
     }
 
-    pub fn get_tips(&self) -> BTreeSet<MsgId> {
+    pub fn get_tips(&self) -> BTreeSet<MsgHash> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
             return BTreeSet::new();
@@ -86,7 +86,7 @@ impl Tangle {
         self.tips.clone()
     }
 
-    pub fn get_lipmaa_set(&self, depth: u64) -> BTreeSet<MsgId> {
+    pub fn get_lipmaa_set(&self, depth: u64) -> BTreeSet<MsgHash> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
             return BTreeSet::new();
@@ -95,19 +95,19 @@ impl Tangle {
         self.get_all_at_depth(lipmaa_depth).clone()
     }
 
-    pub fn has(&self, msg_id: &MsgId) -> bool {
-        self.depth.contains_key(&msg_id)
+    pub fn has(&self, msg_hash: &MsgHash) -> bool {
+        self.depth.contains_key(&msg_hash)
     }
 
-    pub fn get_depth(&self, msg_id: &MsgId) -> Option<u64> {
-        self.depth.get(&msg_id).cloned()
+    pub fn get_depth(&self, msg_hash: &MsgHash) -> Option<u64> {
+        self.depth.get(&msg_hash).cloned()
     }
 
     pub fn is_feed(&self) -> bool {
         if let Some(root_msg) = &self.root_msg {
-            let content = root_msg.content();
+            let data = root_msg.data();
             let metadata = root_msg.metadata();
-            content.is_null() && metadata.content_size() == &0 && metadata.content_hash().is_none()
+            data.is_null() && metadata.data_size() == &0 && metadata.data_hash().is_none()
         } else {
             eprintln!("Tangle is missing root message");
             false
@@ -121,41 +121,41 @@ impl Tangle {
             let root_msg = self.root_msg.as_ref().unwrap();
             let metadata = root_msg.metadata();
             let author_id = metadata.author_id().clone();
-            let content_type = metadata.content_type().to_owned();
-            Some((author_id, content_type))
+            let data_type = metadata.data_type().to_owned();
+            Some((author_id, data_type))
         }
     }
 
-    pub fn shortest_path_to_root(&self, msg_id: &MsgId) -> Vec<MsgId> {
+    pub fn shortest_path_to_root(&self, msg_hash: &MsgHash) -> Vec<MsgHash> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
             return Vec::new();
         }
         let mut path = Vec::new();
-        let mut current = msg_id;
-        while let Some(prev_msg_ids) = self.prev_msg_ids.get(&current) {
-            let (min_msg_id, _) = prev_msg_ids
+        let mut current = msg_hash;
+        while let Some(prev_msg_hashs) = self.prev_msg_hashs.get(&current) {
+            let (min_msg_hash, _) = prev_msg_hashs
                 .iter()
-                .map(|msg_id| (msg_id, self.depth.get(msg_id).unwrap_or(&u64::MAX)))
+                .map(|msg_hash| (msg_hash, self.depth.get(msg_hash).unwrap_or(&u64::MAX)))
                 .min_by_key(|&(_, depth)| depth)
                 .unwrap();
-            path.push(min_msg_id.clone());
-            current = min_msg_id;
+            path.push(min_msg_hash.clone());
+            current = min_msg_hash;
         }
         path
     }
 
-    pub fn precedes(&self, a: &MsgId, b: &MsgId) -> bool {
-        if a == b || b == &self.root_msg_id {
+    pub fn precedes(&self, a: &MsgHash, b: &MsgHash) -> bool {
+        if a == b || b == &self.root_msg_hash {
             return false;
         }
         let mut to_check = vec![b];
         while let Some(current) = to_check.pop() {
-            if let Some(prev_msg_ids) = self.prev_msg_ids.get(&current) {
-                if prev_msg_ids.contains(&a) {
+            if let Some(prev_msg_hashs) = self.prev_msg_hashs.get(&current) {
+                if prev_msg_hashs.contains(&a) {
                     return true;
                 }
-                to_check.extend(prev_msg_ids.iter());
+                to_check.extend(prev_msg_hashs.iter());
             }
         }
         false
@@ -175,7 +175,7 @@ impl Tangle {
             let at_depth = self.get_all_at_depth(i);
             let at_depth_str = at_depth
                 .iter()
-                .map(|msg_id| msg_id.to_string())
+                .map(|msg_hash| msg_hash.to_string())
                 .collect::<Vec<String>>()
                 .join(", ");
             str.push_str(&format!("Depth {}: {}\n", i, at_depth_str));

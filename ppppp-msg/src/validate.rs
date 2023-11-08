@@ -1,7 +1,7 @@
 use ed25519_dalek::ed25519::Error as Ed25519Error;
 use serde_json::Error as JsonError;
 
-use crate::{author_id::AuthorId, msg::Msg, msg_id::MsgId, tangle::Tangle};
+use crate::{author_id::AuthorId, msg::Msg, msg_hash::MsgHash, tangle::Tangle};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -13,43 +13,43 @@ pub enum Error {
     JsonCanon(#[source] JsonError),
     #[error("invalid signature: {0}")]
     Signature(#[source] Ed25519Error),
-    #[error("tangle missing root message id: {root_msg_id}")]
-    MsgTanglesMissingTangleRootMsgId { root_msg_id: MsgId },
-    #[error("msg content type doesn't match feed type: {content_type}")]
-    MsgTypeDoesNotMatchFeedType { content_type: String },
+    #[error("tangle missing root message id: {root_msg_hash}")]
+    MsgTanglesMissingTangleRootMsgHash { root_msg_hash: MsgHash },
+    #[error("msg data type doesn't match feed type: {data_type}")]
+    MsgTypeDoesNotMatchFeedType { data_type: String },
     #[error("msg key id doesn't match feed key id: {author_id}")]
     MsgAuthorIdDoesNotMatchFeedAuthorId { author_id: AuthorId },
-    #[error("depth of prev {prev_msg_id} is not lower")]
-    TanglePrevDepthNotLower { prev_msg_id: MsgId },
+    #[error("depth of prev {prev_msg_hash} is not lower")]
+    TanglePrevDepthNotLower { prev_msg_hash: MsgHash },
     #[error("all prev are locally unknown")]
     AllPrevUnknown,
     #[error("depth must be the largest prev depth plus one")]
     DepthMustBeMaxPlusOne,
     #[error("if tangle empty, msg id must match tangle root msg id")]
-    IfEmptyTangleThenMsgIdMustMatchTangleRootMsgId,
+    IfEmptyTangleThenMsgHashMustMatchTangleRootMsgHash,
     #[error("tangle root must not have self tangles")]
     TangleRootMustNotHaveSelfTangles,
-    #[error("content size does not match metadata.size")]
-    ContentSizeDoesNotMatchMetadata,
-    #[error("content hash does not match metadata.hash")]
-    ContentHashDoesNotMatchMetadata,
+    #[error("data size does not match metadata.size")]
+    DataSizeDoesNotMatchMetadata,
+    #[error("data hash does not match metadata.hash")]
+    DataHashDoesNotMatchMetadata,
 }
 
 pub fn validate(
     msg: &Msg,
-    msg_id: &MsgId,
+    msg_hash: &MsgHash,
     tangle: &Tangle,
-    tangle_root_msg_id: &MsgId,
+    tangle_root_msg_hash: &MsgHash,
 ) -> Result<(), Error> {
     validate_version(msg)?;
 
     if tangle.size() == 0 {
-        validate_tangle_root(msg, msg_id, tangle_root_msg_id)?;
+        validate_tangle_root(msg, msg_hash, tangle_root_msg_hash)?;
     } else {
-        validate_tangle(msg, tangle, tangle_root_msg_id)?;
+        validate_tangle(msg, tangle, tangle_root_msg_hash)?;
     }
 
-    validate_content(msg)?;
+    validate_data(msg)?;
     validate_signature(msg)?;
 
     Ok(())
@@ -83,27 +83,27 @@ pub fn validate_signature(msg: &Msg) -> Result<(), Error> {
 pub fn validate_tangle(
     msg: &Msg,
     tangle: &Tangle,
-    tangle_root_msg_id: &MsgId,
+    tangle_root_msg_hash: &MsgHash,
 ) -> Result<(), Error> {
     let metadata = msg.metadata();
 
     let msg_tangles = metadata.tangles();
     let msg_tangle =
         msg_tangles
-            .get(tangle_root_msg_id)
-            .ok_or(Error::MsgTanglesMissingTangleRootMsgId {
-                root_msg_id: tangle_root_msg_id.clone(),
+            .get(tangle_root_msg_hash)
+            .ok_or(Error::MsgTanglesMissingTangleRootMsgHash {
+                root_msg_hash: tangle_root_msg_hash.clone(),
             })?;
 
     let depth = msg_tangle.depth();
-    let prev_msg_ids = msg_tangle.prev_msg_ids();
+    let prev_msg_hashs = msg_tangle.prev_msg_hashs();
 
     if tangle.is_feed() {
-        let (feed_author_id, feed_content_type) = tangle.get_feed().unwrap();
-        let content_type = metadata.content_type();
-        if content_type != feed_content_type {
+        let (feed_author_id, feed_data_type) = tangle.get_feed().unwrap();
+        let data_type = metadata.data_type();
+        if data_type != feed_data_type {
             return Err(Error::MsgTypeDoesNotMatchFeedType {
-                content_type: content_type.to_owned(),
+                data_type: data_type.to_owned(),
             });
         }
         let author_id = metadata.author_id();
@@ -117,18 +117,18 @@ pub fn validate_tangle(
     let mut min_diff = u64::MAX;
     let mut count_prev_unknown = 0_u64;
 
-    for prev_msg_id in prev_msg_ids {
-        if !tangle.has(prev_msg_id) {
+    for prev_msg_hash in prev_msg_hashs {
+        if !tangle.has(prev_msg_hash) {
             count_prev_unknown += 1;
             continue;
         }
 
-        let prev_depth = tangle.get_depth(prev_msg_id).unwrap();
+        let prev_depth = tangle.get_depth(prev_msg_hash).unwrap();
 
         let diff = depth - prev_depth;
         if diff <= 0 {
             return Err(Error::TanglePrevDepthNotLower {
-                prev_msg_id: prev_msg_id.clone(),
+                prev_msg_hash: prev_msg_hash.clone(),
             });
         }
         if diff < min_diff {
@@ -136,7 +136,7 @@ pub fn validate_tangle(
         }
     }
 
-    if count_prev_unknown == prev_msg_ids.len() as u64 {
+    if count_prev_unknown == prev_msg_hashs.len() as u64 {
         return Err(Error::AllPrevUnknown);
     }
 
@@ -149,31 +149,31 @@ pub fn validate_tangle(
 
 fn validate_tangle_root(
     msg: &Msg,
-    msg_id: &MsgId,
-    tangle_root_msg_id: &MsgId,
+    msg_hash: &MsgHash,
+    tangle_root_msg_hash: &MsgHash,
 ) -> Result<(), Error> {
-    if msg_id == tangle_root_msg_id {
-        Err(Error::IfEmptyTangleThenMsgIdMustMatchTangleRootMsgId)
-    } else if msg.metadata().tangles().contains_key(tangle_root_msg_id) {
+    if msg_hash == tangle_root_msg_hash {
+        Err(Error::IfEmptyTangleThenMsgHashMustMatchTangleRootMsgHash)
+    } else if msg.metadata().tangles().contains_key(tangle_root_msg_hash) {
         Err(Error::TangleRootMustNotHaveSelfTangles)
     } else {
         Ok(())
     }
 }
 
-fn validate_content(msg: &Msg) -> Result<(), Error> {
-    let content = msg.content();
+fn validate_data(msg: &Msg) -> Result<(), Error> {
+    let data = msg.data();
     let metadata = msg.metadata();
 
-    if content.is_null() {
+    if data.is_null() {
         return Ok(());
     }
 
-    let (content_hash, content_size) = content.to_hash();
-    if &Some(content_hash) != metadata.content_hash() {
-        Err(Error::ContentHashDoesNotMatchMetadata)
-    } else if &content_size != metadata.content_size() {
-        Err(Error::ContentSizeDoesNotMatchMetadata)
+    let (data_hash, data_size) = data.to_hash();
+    if &Some(data_hash) != metadata.data_hash() {
+        Err(Error::DataHashDoesNotMatchMetadata)
+    } else if &data_size != metadata.data_size() {
+        Err(Error::DataSizeDoesNotMatchMetadata)
     } else {
         Ok(())
     }

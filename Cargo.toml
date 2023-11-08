@@ -1,4 +1,7 @@
 [workspace]
+resolver = "2"
 members = [
-  "ppppp-msg"
+  "ppppp-base58",
+  "ppppp-msg",
+  "ppppp-account"
 ]
