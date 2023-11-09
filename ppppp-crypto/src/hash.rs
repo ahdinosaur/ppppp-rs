@@ -95,6 +95,10 @@ impl Hasher {
     pub fn finalize(&self) -> Hash {
         Hash(self.0.finalize())
     }
+
+    pub fn count(&self) -> u64 {
+        self.0.count()
+    }
 }
 
 impl Default for Hasher {
