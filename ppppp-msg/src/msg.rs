@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Error as JsonError, Value};
 use std::{
     collections::{HashMap, HashSet},
+    io::Write,
     ops::Deref,
 };
 
@@ -33,22 +34,18 @@ pub struct Msg {
 impl Msg {
     pub fn id(&self) -> Result<MsgId, MsgError> {
         let hash = self.metadata.to_hash()?;
-        Ok(MsgId::from_hash(hash))
+        Ok(hash)
     }
 
     pub fn is_moot(&self, account_id: Option<AccountId>, find_domain: Option<MsgDomain>) -> bool {
         let metadata = self.metadata();
-        if metadata.data_hash().is_some() {
-            false
-        } else if metadata.data_size() != 0 {
-            false
-        } else if account_id.is_some() && metadata.account_id() == &account_id.unwrap() {
-            false
-        } else if metadata.account_tips().is_some() {
-            false
-        } else if !metadata.tangles().is_empty() {
-            false
-        } else if find_domain.is_some() && metadata.domain() == &find_domain.unwrap() {
+        if metadata.data_hash().is_some()
+            || metadata.data_size() != 0
+            || (account_id.is_some() && metadata.account_id() == &account_id.unwrap())
+            || metadata.account_tips().is_some()
+            || !metadata.tangles().is_empty()
+            || (find_domain.is_some() && metadata.domain() == &find_domain.unwrap())
+        {
             false
         } else {
             true
@@ -109,15 +106,40 @@ pub struct MsgMetadata {
 }
 
 impl MsgMetadata {
-    pub fn to_hash(&self) -> Result<Hash, MsgError> {
+    pub fn to_hash(&self) -> Result<MsgMetadataHash, MsgError> {
         let mut hasher = Hasher::new();
         canon_json_to_writer(&mut hasher, &self).map_err(MsgError::JsonCanon)?;
         let hash = hasher.finalize();
-        Ok(hash)
+        Ok(MsgMetadataHash::from_hash(hash))
     }
 
     pub fn to_signable(&self) -> Result<Vec<u8>, MsgError> {
-        json_canon::to_vec(self).map_err(MsgError::JsonCanon)
+        let mut signable = Vec::new();
+
+        static TAG: &[u8] = ":msg-v3:".as_bytes();
+        signable.write_all(TAG);
+
+        json_canon::to_writer(&mut signable, self).map_err(MsgError::JsonCanon)?;
+
+        Ok(signable)
+    }
+
+    pub fn get_moot(account_id: AccountId, domain: MsgDomain) -> Self {
+        Self {
+            account_id,
+            domain,
+            account_tips: None,
+            data_hash: None,
+            data_size: 0,
+            tangles: HashMap::new(),
+            version: 3,
+        }
+    }
+
+    pub fn get_moot_id(account_id: AccountId, domain: MsgDomain) -> Result<MsgId, MsgError> {
+        let moot = Self::get_moot(account_id, domain);
+        let hash = moot.to_hash()?;
+        Ok(hash)
     }
 }
 
