@@ -6,6 +6,6 @@ mod msg;
 mod tangle;
 mod validate;
 
-pub use ppppp_crypto::Signature;
-
+pub use crate::account_id::AccountId;
 pub use crate::hash::{HashFromBase58Error, MsgDataHash, MsgMetadataHash};
+pub use crate::msg::{Msg, MsgId, MsgMetadata, MsgSignature, MsgTangle, MsgTangles};

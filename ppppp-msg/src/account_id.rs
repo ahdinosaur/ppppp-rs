@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-use crate::msg_hash::MsgHash;
+use crate::MsgId;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum AccountId {
-    Tangle(MsgHash),
+    Tangle(MsgId),
     #[serde(rename = "self")]
     SelfIdentity,
     #[serde(rename = "any")]
