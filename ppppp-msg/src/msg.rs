@@ -1,13 +1,13 @@
-use blake3::{Hash, Hasher};
 use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
+use ppppp_crypto::{Hash, Hasher, Signature};
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
-
-use crate::{
-    account_id::AccountId, data::Data, data_hash::DataHash, domain::Domain, msg_hash::MsgHash,
-    signature::Signature,
+use std::{
+    collections::{HashMap, HashSet},
+    ops::Deref,
 };
+
+use crate::{account_id::AccountId, data::Data, domain::Domain, MsgDataHash, MsgMetadataHash};
 
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
 pub struct Msg {
@@ -15,12 +15,12 @@ pub struct Msg {
     data: Data,
     metadata: MsgMetadata,
     #[serde(rename = "sig")]
-    signature: Signature,
+    signature: MsgSignature,
 }
 
 impl Msg {
-    pub fn id(&self) -> MsgHash {
-        MsgHash::from_hash(self.metadata.to_hash())
+    pub fn id(&self) -> MsgMetadataHash {
+        MsgMetadataHash::from_hash(self.metadata.to_hash())
     }
 }
 
@@ -28,9 +28,9 @@ impl Msg {
 pub struct MsgMetadata {
     account: AccountId,
     #[serde(rename = "accountTips")]
-    account_tips: Option<Vec<MsgHash>>,
+    account_tips: Option<Vec<MsgMetadataHash>>,
     #[serde(rename = "dataHash")]
-    data_hash: Option<DataHash>,
+    data_hash: Option<MsgDataHash>,
     #[serde(rename = "dataSize")]
     data_size: u64,
     domain: Domain,
@@ -53,8 +53,19 @@ impl MsgMetadata {
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
 pub struct MsgTangle {
     #[serde(rename = "prev")]
-    prev_msg_hashs: BTreeSet<MsgHash>,
+    prev_msg_hashs: HashSet<MsgMetadataHash>,
     depth: u64,
 }
 
-pub type MsgTangles = BTreeMap<MsgHash, MsgTangle>;
+pub type MsgTangles = HashMap<MsgMetadataHash, MsgTangle>;
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct MsgSignature(Signature);
+
+impl Deref for MsgSignature {
+    type Target = Signature;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}

@@ -1,9 +1,11 @@
-pub mod account_id;
-pub mod data;
-pub mod data_hash;
-pub mod domain;
-pub mod msg;
-pub mod msg_hash;
-pub mod signature;
-pub mod tangle;
-pub mod validate;
+mod account_id;
+mod data;
+mod domain;
+mod hash;
+mod msg;
+mod tangle;
+mod validate;
+
+pub use ppppp_crypto::Signature;
+
+pub use crate::hash::{HashFromBase58Error, MsgDataHash, MsgMetadataHash};

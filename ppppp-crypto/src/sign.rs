@@ -8,13 +8,13 @@ use std::{convert::TryFrom, str::FromStr};
 use thiserror::Error as ThisError;
 
 #[derive(Debug, ThisError)]
-pub enum FromBase58Error {
+pub enum SignFromBase58Error {
     #[error("Failed to decode base58: {0}")]
     Decode(#[source] base58::DecodeError),
     #[error("Incorrect size: {size}")]
     Size { size: usize },
-    #[error("Invalid crypto: {0}")]
-    Crypto(#[source] CryptoSignatureError),
+    #[error("Invalid verifying key: {0}")]
+    VerifyingKey(#[source] CryptoSignatureError),
 }
 
 /// A secret key to sign messages
@@ -23,18 +23,20 @@ pub enum FromBase58Error {
 pub struct SigningKey(CryptoSigningKey);
 
 impl SigningKey {
-    pub fn from_bytes(bytes: &[u8; 32]) -> Self {
+    pub const BYTE_SIZE: usize = 32_usize;
+
+    pub fn from_bytes(bytes: &[u8; Self::BYTE_SIZE]) -> Self {
         Self(CryptoSigningKey::from_bytes(bytes))
     }
 
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(&self) -> [u8; Self::BYTE_SIZE] {
         self.0.to_bytes()
     }
 
-    pub fn from_base58(base58_str: &str) -> Result<Self, FromBase58Error> {
-        let data = base58::decode(base58_str).map_err(FromBase58Error::Decode)?;
+    pub fn from_base58(base58_str: &str) -> Result<Self, SignFromBase58Error> {
+        let data = base58::decode(base58_str).map_err(SignFromBase58Error::Decode)?;
         if data.len() != 64 {
-            return Err(FromBase58Error::Size { size: data.len() });
+            return Err(SignFromBase58Error::Size { size: data.len() });
         }
         let bytes = data.try_into().unwrap();
         let key = Self::from_bytes(&bytes);
@@ -57,7 +59,7 @@ impl Serialize for SigningKey {
 }
 
 impl TryFrom<String> for SigningKey {
-    type Error = FromBase58Error;
+    type Error = SignFromBase58Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         SigningKey::from_base58(&value)
@@ -65,7 +67,7 @@ impl TryFrom<String> for SigningKey {
 }
 
 impl FromStr for SigningKey {
-    type Err = FromBase58Error;
+    type Err = SignFromBase58Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         SigningKey::from_base58(s)
@@ -90,25 +92,27 @@ impl ToString for SigningKey {
 pub struct VerifyingKey(CryptoVerifyingKey);
 
 impl VerifyingKey {
-    pub fn from_bytes(bytes: &[u8; 32]) -> Result<Self, CryptoSignatureError> {
+    pub const BYTE_SIZE: usize = 32_usize;
+
+    pub fn from_bytes(bytes: &[u8; Self::BYTE_SIZE]) -> Result<Self, CryptoSignatureError> {
         Ok(Self(CryptoVerifyingKey::from_bytes(bytes)?))
     }
 
-    pub fn to_bytes(&self) -> [u8; 32] {
+    pub fn to_bytes(&self) -> [u8; Self::BYTE_SIZE] {
         self.0.to_bytes()
     }
 
-    pub fn as_bytes(&self) -> &[u8; 32] {
+    pub fn as_bytes(&self) -> &[u8; Self::BYTE_SIZE] {
         self.0.as_bytes()
     }
 
-    pub fn from_base58(base58_str: &str) -> Result<Self, FromBase58Error> {
-        let data = base58::decode(base58_str).map_err(FromBase58Error::Decode)?;
+    pub fn from_base58(base58_str: &str) -> Result<Self, SignFromBase58Error> {
+        let data = base58::decode(base58_str).map_err(SignFromBase58Error::Decode)?;
         if data.len() != 64 {
-            return Err(FromBase58Error::Size { size: data.len() });
+            return Err(SignFromBase58Error::Size { size: data.len() });
         }
         let bytes = data.try_into().unwrap();
-        let key = Self::from_bytes(&bytes).map_err(FromBase58Error::Crypto)?;
+        let key = Self::from_bytes(&bytes).map_err(SignFromBase58Error::VerifyingKey)?;
         Ok(key)
     }
 
@@ -128,7 +132,7 @@ impl Serialize for VerifyingKey {
 }
 
 impl TryFrom<String> for VerifyingKey {
-    type Error = FromBase58Error;
+    type Error = SignFromBase58Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         VerifyingKey::from_base58(&value)
@@ -136,7 +140,7 @@ impl TryFrom<String> for VerifyingKey {
 }
 
 impl FromStr for VerifyingKey {
-    type Err = FromBase58Error;
+    type Err = SignFromBase58Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         VerifyingKey::from_base58(s)
@@ -155,24 +159,26 @@ impl ToString for VerifyingKey {
     }
 }
 
-/// A public key to verify signatures
+/// An Ed25519 signature
 #[derive(Clone, Debug, Deserialize)]
 #[serde(try_from = "String")]
 pub struct Signature(CryptoSignature);
 
 impl Signature {
-    pub fn from_bytes(bytes: &[u8; 64]) -> Self {
+    pub const BYTE_SIZE: usize = 64_usize;
+
+    pub fn from_bytes(bytes: &[u8; Self::BYTE_SIZE]) -> Self {
         Self(CryptoSignature::from_bytes(bytes))
     }
 
-    pub fn to_bytes(&self) -> [u8; 64] {
+    pub fn to_bytes(&self) -> [u8; Self::BYTE_SIZE] {
         self.0.to_bytes()
     }
 
-    pub fn from_base58(base58_str: &str) -> Result<Self, FromBase58Error> {
-        let data = base58::decode(base58_str).map_err(FromBase58Error::Decode)?;
+    pub fn from_base58(base58_str: &str) -> Result<Self, SignFromBase58Error> {
+        let data = base58::decode(base58_str).map_err(SignFromBase58Error::Decode)?;
         if data.len() != 64 {
-            return Err(FromBase58Error::Size { size: data.len() });
+            return Err(SignFromBase58Error::Size { size: data.len() });
         }
         let bytes = data.try_into().unwrap();
         let key = Self::from_bytes(&bytes);
@@ -195,7 +201,7 @@ impl Serialize for Signature {
 }
 
 impl TryFrom<String> for Signature {
-    type Error = FromBase58Error;
+    type Error = SignFromBase58Error;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Signature::from_base58(&value)
@@ -203,7 +209,7 @@ impl TryFrom<String> for Signature {
 }
 
 impl FromStr for Signature {
-    type Err = FromBase58Error;
+    type Err = SignFromBase58Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Signature::from_base58(s)
