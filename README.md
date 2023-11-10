@@ -16,7 +16,10 @@
 
 \* [MVP](https://github.com/ahdinosaur/ppppp-rs/issues/1)
 
-(see also [pietguerson/ssb-server-system-design](https://github.com/pietgeursen/ssb-server-system-design))
+> see also:
+>
+> - sunrise sketch: [`%Rkenf2YtjouPfOOzrHpzKPn150t3l8oJq+5dZ9/AXWo=.sha256`](https://viewer.scuttlebot.io/%25Rkenf2YtjouPfOOzrHpzKPn150t3l8oJq%2B5dZ9%2FAXWo%3D.sha256)
+> - [pietguerson/ssb-server-system-design](https://github.com/pietgeursen/ssb-server-system-design)
 
 ### base
 
@@ -44,20 +47,23 @@
   - [staltz/ppppp-set](https://github.com/staltz/ppppp-set)
 - ppppp-dict
   - [staltz/ppppp-dict](https://github.com/staltz/ppppp-dict)
-- ppppp-blobs
+- ppppp-blob
 
 ### data store
 
+- ppppp-key-store
+  - [staltz/ppppp-keypair](https://github.com/staltz/ppppp-keypair)
+  - [sunrise-choir/ssb-keyfile](https://github.com/sunrise-choir/ssb-keyfile)
 - \*ppppp-msg-log
   - [ssbc/async-append-only-log](https://github.com/ssbc/async-append-only-log)
   - [sunrise-choir/flumedb-rs](https://github.com/sunrise-choir/flumedb-rs)
 - \*ppppp-msg-store
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-db](https://github.com/sunrise-choir/ssb-db)
-- ppppp-key-store
-  - [staltz/ppppp-keypair](https://github.com/staltz/ppppp-keypair)
-  - [sunrise-choir/ssb-keyfile](https://github.com/sunrise-choir/ssb-keyfile)
-- ppppp-blobs-store
+- ppppp-msg-store-prune
+  - [staltz/ppppp-gc](https://github.com/staltz/ppppp-gc)
+- ppppp-blob-store
+- ppppp-blob-store-prune
 
 ### rpc
 
@@ -93,22 +99,26 @@
   - [staltz/ppppp-promise](https://github.com/staltz/ppppp-promise)
 - ppppp-invite
   - [staltz/ppppp-invite](https://github.com/staltz/ppppp-invite)
-- \*ppppp-hub-client
-  - [staltz/ppppp-hub-client](https://github.com/staltz/ppppp-hub-client)
-- ppppp-hub
+- ppppp-hub: server to cross-connect clients via tunnel
   - [staltz/ppppp-hub](https://github.com/staltz/ppppp-hub)
+- ppppp-connect: discover, remember, query, stage, establish, and maintain connections
+  - [ssbc/ssb-conn](https://github.com/ssbc/ssb-conn)
+- \*ppppp-connect-hub: discover and connect to peers over hub server
+  - [staltz/ppppp-hub-client](https://github.com/staltz/ppppp-hub-client)
+- ppppp-connect-lan: discover and connect to peers on same LAN
+  - [ssbc/ssb-lan](https://github.com/ssbc/ssb-lan)
 
 ### replication
 
-- \*ppppp-tangle-sync
+- \*ppppp-replicate: replication trait
+- \*ppppp-replicate-tangle: replicate using Kleppman's hash graph sync
   - [staltz/ppppp-tangle-sync](https://github.com/staltz/ppppp-tangle-sync)
-- ppppp-garbage
-  - [staltz/ppppp-gc](https://github.com/staltz/ppppp-gc)
+
+### orchestration
+
 - ppppp-goals
   - [staltz/ppppp-goals](https://github.com/staltz/ppppp-goals)
-- ppppp-connections
-  - [ssbc/ssb-conn](https://github.com/ssbc/ssb-conn)
-- ppppp-conductor
+- ppppp-conductor: schedule connections, replication, and pruning
 
 ### private messages / groups
 
