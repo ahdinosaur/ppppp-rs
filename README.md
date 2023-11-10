@@ -15,6 +15,7 @@
 ## modules sketch
 
 
+- 🔵: done
 - 🟢: work in progress
 - 🔴: must have for [minimum viable prototype](https://github.com/ahdinosaur/ppppp-rs/issues/1)
 - 🟠: expected for a complete platform
@@ -113,9 +114,9 @@
 
 ### replication
 
-- 🔴 `ppppp-replicate`: ppppp replication trait
-- 🔴 `ppppp-replicate-tangle`: replicate in ppppp using Kleppman's hash graph sync
+- 🔴 `ppppp-sync`: replicate in ppppp using Kleppman's hash graph sync
   - [staltz/ppppp-tangle-sync](https://github.com/staltz/ppppp-tangle-sync)
+- 🟡 `ppppp-sync-ebt`: replicate in ppppp using epidemic broadcast trees
 
 ### orchestration
 
