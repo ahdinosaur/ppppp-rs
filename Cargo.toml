@@ -1,8 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-  "ppppp-base58",
-  "ppppp-crypto",
-  "ppppp-msg",
-  "ppppp-account"
+  "base58",
+  "crypto",
+  "msg",
+  "tangle",
+  "account"
 ]

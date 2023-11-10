@@ -1,7 +1,6 @@
 mod hash;
 mod msg;
-mod tangle;
-mod validate;
+// mod validate;
 
 pub use crate::hash::{HashFromBase58Error, MsgDataHash, MsgMetadataHash};
 pub use crate::msg::{

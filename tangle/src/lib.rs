@@ -1,71 +1,77 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{HashMap, HashSet};
 
-use crate::{author_id::AuthorId, msg::Msg, msg_hash::MsgHash};
+use ppppp_msg::{AccountId, Msg, MsgDomain, MsgId};
+
+pub struct MootDetails {
+    pub account_id: AccountId,
+    pub domain: MsgDomain,
+    pub id: MsgId,
+}
 
 pub struct Tangle {
-    root_msg_hash: MsgHash,
-    max_depth: u64,
+    root_msg_id: MsgId,
     root_msg: Option<Msg>,
-    tips: BTreeSet<MsgHash>,
-    prev_msg_hashs: BTreeMap<MsgHash, BTreeSet<MsgHash>>,
-    depth: BTreeMap<MsgHash, u64>,
-    per_depth: BTreeMap<u64, BTreeSet<MsgHash>>,
+    tips: HashSet<MsgId>,
+    prev_msg_ids: HashMap<MsgId, HashSet<MsgId>>,
+    depth: HashMap<MsgId, u64>,
+    per_depth: HashMap<u64, HashSet<MsgId>>,
+    max_depth: u64,
 }
 
 impl Tangle {
-    pub fn new(root_msg_hash: MsgHash) -> Self {
+    pub fn new(root_msg_id: MsgId) -> Self {
         Self {
-            root_msg_hash,
-            max_depth: 0,
+            root_msg_id,
             root_msg: None,
-            tips: BTreeSet::new(),
-            prev_msg_hashs: BTreeMap::new(),
-            depth: BTreeMap::new(),
-            per_depth: BTreeMap::new(),
+            tips: HashSet::new(),
+            prev_msg_ids: HashMap::new(),
+            depth: HashMap::new(),
+            per_depth: HashMap::new(),
+            max_depth: 0,
         }
     }
 
-    pub fn add(&mut self, msg_hash: &MsgHash, msg: &Msg) {
-        if msg_hash == &self.root_msg_hash && self.root_msg.is_none() {
+    pub fn add(&mut self, msg_hash: &MsgId, msg: &Msg) {
+        if msg_hash == &self.root_msg_id && self.root_msg.is_none() {
             self.tips.insert(msg_hash.clone());
-            self.per_depth.insert(0, BTreeSet::from([msg_hash.clone()]));
+            self.per_depth.insert(0, HashSet::from([msg_hash.clone()]));
             self.depth.insert(msg_hash.clone(), 0);
             self.root_msg = Some(msg.clone());
             return;
         }
 
         let tangles = msg.metadata().tangles();
-        if msg_hash != &self.root_msg_hash && tangles.contains_key(&self.root_msg_hash) {
+        if msg_hash != &self.root_msg_id && tangles.contains_key(&self.root_msg_id) {
             self.tips.insert(msg_hash.clone());
 
-            let tangle = tangles.get(&self.root_msg_hash).unwrap();
-            let prev_msg_hashs = tangle.prev_msg_hashs();
-            for prev_msg_hash in prev_msg_hashs.clone() {
+            let tangle = tangles.get(&self.root_msg_id).unwrap();
+            let prev_msg_ids = tangle.prev_msg_ids();
+            for prev_msg_hash in prev_msg_ids.clone() {
                 self.tips.remove(&prev_msg_hash);
             }
-            self.prev_msg_hashs
-                .insert(msg_hash.clone(), prev_msg_hashs.clone());
+            self.prev_msg_ids
+                .insert(msg_hash.clone(), prev_msg_ids.clone());
 
-            let tangle = tangles.get(&self.root_msg_hash).unwrap();
+            let tangle = tangles.get(&self.root_msg_id).unwrap();
             let depth = tangle.depth().clone();
             if depth > self.max_depth {
                 self.max_depth = depth;
             }
             self.depth.insert(msg_hash.clone(), depth);
 
-            let at_depth = self.per_depth.entry(depth).or_insert_with(BTreeSet::new);
+            let at_depth = self.per_depth.entry(depth).or_insert_with(HashSet::new);
             at_depth.insert(msg_hash.clone());
         }
     }
 
-    fn get_all_at_depth(&self, depth: u64) -> BTreeSet<MsgHash> {
+    fn get_all_at_depth(&self, depth: u64) -> HashSet<MsgId> {
         self.per_depth
             .get(&depth)
             .cloned()
-            .unwrap_or(BTreeSet::new())
+            .unwrap_or(HashSet::new())
     }
 
-    pub fn topo_sort(&self) -> Vec<MsgHash> {
+    pub fn topo_sort(&self) -> Vec<MsgId> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
             return Vec::new();
@@ -78,40 +84,57 @@ impl Tangle {
         sorted
     }
 
-    pub fn get_tips(&self) -> BTreeSet<MsgHash> {
+    pub fn get_tips(&self) -> HashSet<MsgId> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
-            return BTreeSet::new();
+            return HashSet::new();
         }
         self.tips.clone()
     }
 
-    pub fn get_lipmaa_set(&self, depth: u64) -> BTreeSet<MsgHash> {
+    pub fn get_lipmaa_set(&self, depth: u64) -> HashSet<MsgId> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
-            return BTreeSet::new();
+            return HashSet::new();
         }
         let lipmaa_depth = lipmaa(depth + 1) - 1;
         self.get_all_at_depth(lipmaa_depth).clone()
     }
 
-    pub fn has(&self, msg_hash: &MsgHash) -> bool {
+    pub fn has(&self, msg_hash: &MsgId) -> bool {
         self.depth.contains_key(&msg_hash)
     }
 
-    pub fn get_depth(&self, msg_hash: &MsgHash) -> Option<u64> {
+    pub fn get_depth(&self, msg_hash: &MsgId) -> Option<u64> {
         self.depth.get(&msg_hash).cloned()
     }
 
-    pub fn is_feed(&self) -> bool {
-        if let Some(root_msg) = &self.root_msg {
-            let data = root_msg.data();
-            let metadata = root_msg.metadata();
-            data.is_null() && metadata.data_size() == &0 && metadata.data_hash().is_none()
-        } else {
+    fn is_feed(&self) -> bool {
+        let Some(root_msg) = self.root_msg else {
             eprintln!("Tangle is missing root message");
-            false
+            return false;
+        };
+        root_msg.is_moot(None, None)
+    }
+
+    pub fn id(&self) -> MsgId {
+        self.root_msg_id
+    }
+
+    pub fn moot_details(&self) -> Option<MootDetails> {
+        if !self.is_feed() {
+            return None;
         }
+        let Some(root_msg) = self.root_msg else {
+            eprintln!("Tangle is missing root message");
+            return None;
+        };
+        let metadata = root_msg.metadata();
+        Some(MootDetails {
+            account_id: metadata.account_id().clone(),
+            domain: metadata.domain().clone(),
+            id: self.root_msg_id,
+        })
     }
 
     pub fn get_feed(&self) -> Option<(AuthorId, String)> {
@@ -126,15 +149,15 @@ impl Tangle {
         }
     }
 
-    pub fn shortest_path_to_root(&self, msg_hash: &MsgHash) -> Vec<MsgHash> {
+    pub fn shortest_path_to_root(&self, msg_hash: &MsgId) -> Vec<MsgId> {
         if self.root_msg.is_none() {
             eprintln!("Tangle is missing root message");
             return Vec::new();
         }
         let mut path = Vec::new();
         let mut current = msg_hash;
-        while let Some(prev_msg_hashs) = self.prev_msg_hashs.get(&current) {
-            let (min_msg_hash, _) = prev_msg_hashs
+        while let Some(prev_msg_ids) = self.prev_msg_ids.get(&current) {
+            let (min_msg_hash, _) = prev_msg_ids
                 .iter()
                 .map(|msg_hash| (msg_hash, self.depth.get(msg_hash).unwrap_or(&u64::MAX)))
                 .min_by_key(|&(_, depth)| depth)
@@ -145,17 +168,17 @@ impl Tangle {
         path
     }
 
-    pub fn precedes(&self, a: &MsgHash, b: &MsgHash) -> bool {
-        if a == b || b == &self.root_msg_hash {
+    pub fn precedes(&self, a: &MsgId, b: &MsgId) -> bool {
+        if a == b || b == &self.root_msg_id {
             return false;
         }
         let mut to_check = vec![b];
         while let Some(current) = to_check.pop() {
-            if let Some(prev_msg_hashs) = self.prev_msg_hashs.get(&current) {
-                if prev_msg_hashs.contains(&a) {
+            if let Some(prev_msg_ids) = self.prev_msg_ids.get(&current) {
+                if prev_msg_ids.contains(&a) {
                     return true;
                 }
-                to_check.extend(prev_msg_hashs.iter());
+                to_check.extend(prev_msg_ids.iter());
             }
         }
         false

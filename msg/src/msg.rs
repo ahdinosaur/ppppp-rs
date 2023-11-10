@@ -1,11 +1,11 @@
 use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
-use ppppp_crypto::{Hash, Hasher, Signature, VerifyingKey};
+use ppppp_crypto::{Hasher, Signature, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use serde_json::{Error as JsonError, Value};
 use std::{
     collections::{HashMap, HashSet},
-    io::Write,
+    io::{self, Write},
     ops::Deref,
 };
 
@@ -15,6 +15,8 @@ use crate::{MsgDataHash, MsgMetadataHash};
 pub enum MsgError {
     #[error("failed to serialize to canonical json: {0}")]
     JsonCanon(#[source] JsonError),
+    #[error("io error: {0}")]
+    Io(#[source] io::Error),
 }
 
 pub type MsgId = MsgMetadataHash;
@@ -39,17 +41,12 @@ impl Msg {
 
     pub fn is_moot(&self, account_id: Option<AccountId>, find_domain: Option<MsgDomain>) -> bool {
         let metadata = self.metadata();
-        if metadata.data_hash().is_some()
+        !(metadata.data_hash().is_some()
             || metadata.data_size() != 0
             || (account_id.is_some() && metadata.account_id() == &account_id.unwrap())
             || metadata.account_tips().is_some()
             || !metadata.tangles().is_empty()
-            || (find_domain.is_some() && metadata.domain() == &find_domain.unwrap())
-        {
-            false
-        } else {
-            true
-        }
+            || (find_domain.is_some() && metadata.domain() == &find_domain.unwrap()))
     }
 }
 
@@ -74,7 +71,7 @@ impl MsgData {
 
 #[derive(Copy, Clone, Debug, thiserror::Error)]
 #[error("invalid data, must be JSON object, string, or null")]
-struct MsgDataFromJsonValue;
+pub struct MsgDataFromJsonValue;
 
 impl TryFrom<Value> for MsgData {
     type Error = MsgDataFromJsonValue;
@@ -117,7 +114,7 @@ impl MsgMetadata {
         let mut signable = Vec::new();
 
         static TAG: &[u8] = ":msg-v3:".as_bytes();
-        signable.write_all(TAG);
+        signable.write_all(TAG).map_err(MsgError::Io)?;
 
         json_canon::to_writer(&mut signable, self).map_err(MsgError::JsonCanon)?;
 
@@ -160,7 +157,7 @@ pub struct MsgDomain(pub String);
 #[serde(deny_unknown_fields)]
 pub struct MsgTangle {
     #[serde(rename = "prev")]
-    prev_msg_hashs: HashSet<MsgId>,
+    prev_msg_ids: HashSet<MsgId>,
     depth: u64,
 }
 
