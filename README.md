@@ -23,106 +23,107 @@
 
 ### base
 
-- \*ppppp-base58
-- \*ppppp-crypto
+- \*ppppp-base58: base58 with the ppppp alphabet
+- \*ppppp-crypto: primitive crypto types and operations used by ppppp
   - [sunrise-choir/ssb-crypto](https://github.com/sunrise-choir/ssb-crypto)
+- ppppp-service: rpc service trait (able to be exposed externally over muxrpc or internally in memory)
 
 ### data
 
-- \*ppppp-msg
+- \*`ppppp-msg`: message format for ppppp
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/legacy-msg-data](https://github.com/sunrise-choir/legacy-msg-data)
   - [sunrise-choir/ssb-legacy-msg](https://github.com/sunrise-choir/ssb-legacy-msg)
-- \*ppppp-validate
+- \*`ppppp-tangle`: message tangle format for ppppp
+  - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
+  - [sunrise-choir/ssb-casual-sort](https://github.com/sunrise-choir/ssb-casual-sort)
+- \*`ppppp-validate`: validate ppppp messages: individually or as tangles
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-validate](https://github.com/sunrise-choir/ssb-validate)
   - [sunrise-choir/ssb-verify-signatures](https://github.com/sunrise-choir/ssb-verify-signatures)
-- \*ppppp-tangle
-  - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
-  - [sunrise-choir/ssb-casual-sort](https://github.com/sunrise-choir/ssb-casual-sort)
-- ppppp-threads
+- \*`ppppp-account`: account helpers for ppppp
+- `ppppp-threads`: message thread helpers for ppppp
   - [ssbc/ssb-threads](https://github.com/ssbc/ssb-threads)
-- \*ppppp-account
-- ppppp-set
+- `ppppp-set`: set data structure for ppppp
   - [staltz/ppppp-set](https://github.com/staltz/ppppp-set)
-- ppppp-dict
+- `ppppp-dict`: dictionary data structure for ppppp
   - [staltz/ppppp-dict](https://github.com/staltz/ppppp-dict)
-- ppppp-blob
+- `ppppp-blob`: binary data format for ppppp
 
 ### data store
 
-- ppppp-key-store
+- `ppppp-key-store`: key store for ppppp: read keys from a file, write keys to a file
   - [staltz/ppppp-keypair](https://github.com/staltz/ppppp-keypair)
   - [sunrise-choir/ssb-keyfile](https://github.com/sunrise-choir/ssb-keyfile)
-- \*ppppp-msg-log
+- \*`ppppp-msg-log`: append-only log storage with pruning for ppppp
   - [ssbc/async-append-only-log](https://github.com/ssbc/async-append-only-log)
   - [sunrise-choir/flumedb-rs](https://github.com/sunrise-choir/flumedb-rs)
-- \*ppppp-msg-store
+- \*`ppppp-msg-store`: materialized data views for ppppp
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-db](https://github.com/sunrise-choir/ssb-db)
-- ppppp-msg-store-prune
-  - [staltz/ppppp-gc](https://github.com/staltz/ppppp-gc)
-- ppppp-blob-store
-- ppppp-blob-store-prune
+- `ppppp-blob-store`: binary data stores for ppppp
+- `ppppp-db`: database for ppppp
 
 ### rpc
 
-- \*ppppp-packetstream
+- \*`ppppp-packetstream`: multiplexed packet protocol for ppppp
   - [sunrise-choir/ssb-packetstream](https://github.com/sunrise-choir/ssb-packetstream)
   - [sunrise-choir/packet-stream-rs](https://github.com/sunrise-choir/packet-stream-rs)
   - [sunrise-choir/packet-stream-codec-rs](https://github.com/sunrise-choir/packet-stream-codec-rs)
-- \*ppppp-muxrpc
+- \*`ppppp-muxrpc`: multiplexed rpc for ppppp
   - [sunrise-choir/muxrpc-rs](https://github.com/sunrise-choir/muxrpc-rs)
-- ppppp-rpc
+- `ppppp-rpc`: type manifest for ppppp rpc interface
   - [sunrise-choir/ssb-rpc-rs](https://github.com/sunrise-choir/ssb-rpc-rs)
-- ppppp-server
-- ppppp-client
+- `ppppp-server`: rpc server for pppppp
+- `ppppp-client`: rpc client for pppppp
   - [sunrise-choir/ssb-client-rs](https://github.com/sunrise-choir/ssb-client-rs)
 
 ### handshake
 
-- \*ppppp-boxstream
+- \*`ppppp-boxstream`: encrypted box stream protocol for ppppp
   - [sunrise-choir/ssb-boxstream](https://github.com/sunrise-choir/ssb-boxstream)
   - [sunrise-choir/box-stream-rs](https://github.com/sunrise-choir/box-stream-rs)
   - [sunrise-choir/box-stream-c](https://github.com/sunrise-choir/box-stream-c)
-- \*ppppp-shse
+- \*`ppppp-shse`: secret handshake extended protocol for ppppp
   - [staltz/secret-handshake-ext](https://github.com/staltz/secret-handshake-ext)
   - [sunrise-choir/ssb-handshake](https://github.com/sunrise-choir/ssb-handshake)
   - [sunrise-choir/secret-handshake-rs](https://github.com/sunrise-choir/secret-handshake-rs)
   - [sunrise-choir/shs1-c](https://github.com/sunrise-choir/shs1-c)
-- \*ppppp-caps
+- \*`ppppp-caps`
   - [staltz/ppppp-caps](https://github.com/staltz/ppppp-caps)
 
 ### discovery
 
-- ppppp-promise
+- `ppppp-promise`: tokens in ppppp that authorize others to gain something
   - [staltz/ppppp-promise](https://github.com/staltz/ppppp-promise)
-- ppppp-invite
+- `ppppp-invite`: invite code generator and parser for ppppp
   - [staltz/ppppp-invite](https://github.com/staltz/ppppp-invite)
-- ppppp-hub: server to cross-connect clients via tunnel
+- `ppppp-hub`: server to cross-connect ppppp peers via tunnel
   - [staltz/ppppp-hub](https://github.com/staltz/ppppp-hub)
-- ppppp-connect: discover, remember, query, stage, establish, and maintain connections
+- `ppppp-connect`: discover, remember, query, stage, establish, and maintain ppppp connections
   - [ssbc/ssb-conn](https://github.com/ssbc/ssb-conn)
-- \*ppppp-connect-hub: discover and connect to peers over hub server
+- \*`ppppp-connect-hub`: discover and connect to ppppp peers over hub server
   - [staltz/ppppp-hub-client](https://github.com/staltz/ppppp-hub-client)
-- ppppp-connect-lan: discover and connect to peers on same LAN
+- `ppppp-connect-lan`: discover and connect to ppppp peers on same LAN
   - [ssbc/ssb-lan](https://github.com/ssbc/ssb-lan)
 
 ### replication
 
-- \*ppppp-replicate: replication trait
-- \*ppppp-replicate-tangle: replicate using Kleppman's hash graph sync
+- \*`ppppp-replicate`: ppppp replication trait
+- \*`ppppp-replicate-tangle`: replicate in ppppp using Kleppman's hash graph sync
   - [staltz/ppppp-tangle-sync](https://github.com/staltz/ppppp-tangle-sync)
 
 ### orchestration
 
-- ppppp-goals
+- `ppppp-gc`: data garbage collector for ppppp
+  - [staltz/ppppp-gc](https://github.com/staltz/ppppp-gc)
+- `ppppp-goals`: track replication goals in ppppp
   - [staltz/ppppp-goals](https://github.com/staltz/ppppp-goals)
-- ppppp-conductor: schedule connections, replication, and pruning
+- `ppppp-conductor`: schedule connections, replication, and pruning
 
 ### private messages / groups
 
 ### sdk
 
-- ppppp-sdk
+- `ppppp-sdk`: friendly kit for developers to build ppppp apps
   - [sunrise-choir/ssb-publish](https://github.com/sunrise-choir/ssb-publish)
