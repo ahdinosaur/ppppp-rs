@@ -1,7 +1,6 @@
-use ed25519_dalek::ed25519::Error as Ed25519Error;
+use ppppp_crypto::VerifyingKey;
+use ppppp_msg::MsgData;
 use serde_json::Error as JsonError;
-
-use crate::{author_id::AuthorId, msg::Msg, msg_hash::MsgHash, tangle::Tangle};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -33,15 +32,19 @@ pub enum Error {
     DataSizeDoesNotMatchMetadata,
     #[error("data hash does not match metadata.hash")]
     DataHashDoesNotMatchMetadata,
+    #[error("data must be null, string, or object")]
+    DataMustBeNullOrStringOrObject { msg_data: MsgData },
 }
 
 pub fn validate(
     msg: &Msg,
     msg_hash: &MsgHash,
     tangle: &Tangle,
+    verifying_keys: Vec<VerifyingKey>,
     tangle_root_msg_hash: &MsgHash,
 ) -> Result<(), Error> {
     validate_version(msg)?;
+    validate_data(msg)?;
 
     if tangle.size() == 0 {
         validate_tangle_root(msg, msg_hash, tangle_root_msg_hash)?;
@@ -57,8 +60,36 @@ pub fn validate(
 
 pub fn validate_version(msg: &Msg) -> Result<(), Error> {
     let version = *msg.metadata().version();
-    if version != 1 {
+    if version != 3 {
         Err(Error::Version { version })
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_data(msg: &Msg) -> Result<(), Error> {
+    let data = msg.data();
+    if data.is_null() || data.is_string() || data.is_object() {
+        Ok(())
+    } else {
+        Err(Error::DataMustBeNullOrStringOrObject {
+            msg_data: data.clone(),
+        })
+    }
+}
+
+fn validate_data_size_hash(msg: &Msg) -> Result<(), Error> {
+    let metadata = msg.metadata();
+
+    if data.is_null() {
+        return Ok(());
+    }
+
+    let (data_hash, data_size) = data.to_hash();
+    if &Some(data_hash) != metadata.data_hash() {
+        Err(Error::DataHashDoesNotMatchMetadata)
+    } else if &data_size != metadata.data_size() {
+        Err(Error::DataSizeDoesNotMatchMetadata)
     } else {
         Ok(())
     }
@@ -156,24 +187,6 @@ fn validate_tangle_root(
         Err(Error::IfEmptyTangleThenMsgHashMustMatchTangleRootMsgHash)
     } else if msg.metadata().tangles().contains_key(tangle_root_msg_hash) {
         Err(Error::TangleRootMustNotHaveSelfTangles)
-    } else {
-        Ok(())
-    }
-}
-
-fn validate_data(msg: &Msg) -> Result<(), Error> {
-    let data = msg.data();
-    let metadata = msg.metadata();
-
-    if data.is_null() {
-        return Ok(());
-    }
-
-    let (data_hash, data_size) = data.to_hash();
-    if &Some(data_hash) != metadata.data_hash() {
-        Err(Error::DataHashDoesNotMatchMetadata)
-    } else if &data_size != metadata.data_size() {
-        Err(Error::DataSizeDoesNotMatchMetadata)
     } else {
         Ok(())
     }

@@ -33,18 +33,18 @@
   - [sunrise-choir/ssb-crypto](https://github.com/sunrise-choir/ssb-crypto)
 - 🟠 `ppppp-service`: rpc service trait (able to be exposed externally over muxrpc or internally in memory)
 
-### data
+### formats
 
 - 🟢 `ppppp-msg`: ppppp message format and validation
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/legacy-msg-data](https://github.com/sunrise-choir/legacy-msg-data)
   - [sunrise-choir/ssb-legacy-msg](https://github.com/sunrise-choir/ssb-legacy-msg)
-  - [sunrise-choir/ssb-validate](https://github.com/sunrise-choir/ssb-validate)
-  - [sunrise-choir/ssb-verify-signatures](https://github.com/sunrise-choir/ssb-verify-signatures)
 - 🟢 `ppppp-tangle`: ppppp message tangle format and validation
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-casual-sort](https://github.com/sunrise-choir/ssb-casual-sort)
+- 🟢 `ppppp-validate`: validate ppppp messages and tangles
   - [sunrise-choir/ssb-validate](https://github.com/sunrise-choir/ssb-validate)
+  - [sunrise-choir/ssb-verify-signatures](https://github.com/sunrise-choir/ssb-verify-signatures)
 - 🔴 `ppppp-account`: account helpers for ppppp
 - 🟠 `ppppp-threads`: message thread helpers for ppppp
   - [ssbc/ssb-threads](https://github.com/ssbc/ssb-threads)
@@ -54,7 +54,7 @@
   - [staltz/ppppp-dict](https://github.com/staltz/ppppp-dict)
 - 🟠 `ppppp-blob`: binary data format for ppppp
 
-### data store
+### stores
 
 - 🟠 `ppppp-key-store`: key store for ppppp: read keys from a file, write keys to a file
   - [staltz/ppppp-keypair](https://github.com/staltz/ppppp-keypair)

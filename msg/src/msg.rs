@@ -2,7 +2,7 @@ use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
 use ppppp_crypto::{Hasher, Signature, VerifyingKey};
 use serde::{Deserialize, Serialize};
-use serde_json::{Error as JsonError, Value};
+use serde_json::{Error as JsonError, Map, Value};
 use std::{
     collections::{HashMap, HashSet},
     io::{self, Write},
@@ -66,6 +66,22 @@ impl MsgData {
 
     pub fn is_null(&self) -> bool {
         self.0.is_null()
+    }
+
+    pub fn is_string(&self) -> bool {
+        self.0.is_string()
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        self.0.as_str()
+    }
+
+    pub fn is_object(&self) -> bool {
+        self.0.is_object()
+    }
+
+    pub fn as_object(&self) -> Option<&Map<String, Value>> {
+        self.0.as_object()
     }
 }
 
