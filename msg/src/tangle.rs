@@ -1,11 +1,17 @@
 use std::collections::{HashMap, HashSet};
 
-use ppppp_msg::{AccountId, Msg, MsgDomain, MsgId};
+use crate::{AccountId, MootDetails, Msg, MsgId};
 
-pub struct MootDetails {
-    pub account_id: AccountId,
-    pub domain: MsgDomain,
-    pub id: MsgId,
+#[derive(Clone, Debug, thiserror::Error)]
+#[error("tangle is missing root message")]
+pub struct TangleMissingRootMessageError {
+    root_msg_id: MsgId,
+}
+
+pub enum TangleType {
+    Feed,
+    Account,
+    Weave,
 }
 
 pub struct Tangle {
@@ -117,7 +123,7 @@ impl Tangle {
         root_msg.is_moot(None, None)
     }
 
-    pub fn id(&self) -> &MsgId {
+    pub fn get_id(&self) -> &MsgId {
         &self.root_msg_id
     }
 
@@ -137,9 +143,29 @@ impl Tangle {
         })
     }
 
-    // TODO type()
+    pub fn get_type(&self) -> Result<TangleType, TangleMissingRootMessageError> {
+        let Some(root_msg) = self.root_msg else {
+            return Err(TangleMissingRootMessageError {
+                root_msg_id: self.root_msg_id,
+            });
+        };
+        if self.is_feed() {
+            Ok(TangleType::Feed)
+        } else if root_msg.metadata().account_id() == &AccountId::SelfIdentity {
+            Ok(TangleType::Account)
+        } else {
+            Ok(TangleType::Weave)
+        }
+    }
 
-    // TODO root()
+    pub fn get_root(&self) -> Result<Msg, TangleMissingRootMessageError> {
+        let Some(root_msg) = self.root_msg else {
+            return Err(TangleMissingRootMessageError {
+                root_msg_id: self.root_msg_id,
+            });
+        };
+        Ok(root_msg)
+    }
 
     pub fn shortest_path_to_root(&self, msg_hash: &MsgId) -> Vec<MsgId> {
         if self.root_msg.is_none() {
@@ -160,7 +186,17 @@ impl Tangle {
         path
     }
 
-    // TODO getMinimumAmong()
+    pub fn get_minimum_among(&self, msg_ids: Vec<MsgId>) -> Vec<MsgId> {
+        let mut minimum: HashSet<MsgId> = HashSet::from_iter(msg_ids.into_iter());
+        for a in msg_ids {
+            for b in msg_ids {
+                if self.precedes(&a, &b) {
+                    minimum.remove(&b);
+                }
+            }
+        }
+        minimum.into_iter().collect()
+    }
 
     pub fn precedes(&self, a: &MsgId, b: &MsgId) -> bool {
         if a == b || b == &self.root_msg_id {

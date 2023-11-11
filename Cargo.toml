@@ -3,8 +3,5 @@ resolver = "2"
 members = [
   "base58",
   "crypto",
-  "msg",
-  "tangle",
-  "account",
-  "validate"
+  "msg"
 ]

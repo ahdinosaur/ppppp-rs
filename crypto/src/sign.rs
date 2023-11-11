@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::{convert::TryFrom, str::FromStr};
 use thiserror::Error as ThisError;
 
+pub use ed25519_dalek::SignatureError;
+
 #[derive(Debug, ThisError)]
 pub enum SignFromBase58Error {
     #[error("Failed to decode base58: {0}")]
