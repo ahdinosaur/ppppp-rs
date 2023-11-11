@@ -35,14 +35,11 @@
 
 ### formats
 
-- 🟢 `ppppp-msg`: ppppp message format and validation
+- 🟢 `ppppp-msg`: ppppp messages and tangles
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/legacy-msg-data](https://github.com/sunrise-choir/legacy-msg-data)
   - [sunrise-choir/ssb-legacy-msg](https://github.com/sunrise-choir/ssb-legacy-msg)
-- 🟢 `ppppp-tangle`: ppppp message tangle format and validation
-  - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-casual-sort](https://github.com/sunrise-choir/ssb-casual-sort)
-- 🟢 `ppppp-validate`: validate ppppp messages and tangles
   - [sunrise-choir/ssb-validate](https://github.com/sunrise-choir/ssb-validate)
   - [sunrise-choir/ssb-verify-signatures](https://github.com/sunrise-choir/ssb-verify-signatures)
 - 🔴 `ppppp-account`: account helpers for ppppp
