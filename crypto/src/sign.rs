@@ -4,7 +4,7 @@ use ed25519_dalek::{
 };
 use ppppp_base58 as base58;
 use serde::{Deserialize, Serialize, Serializer};
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom, fmt::Display, str::FromStr};
 use thiserror::Error as ThisError;
 
 pub use ed25519_dalek::SignatureError;
@@ -82,9 +82,9 @@ impl From<&SigningKey> for String {
     }
 }
 
-impl ToString for SigningKey {
-    fn to_string(&self) -> String {
-        self.to_base58()
+impl Display for SigningKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_base58())
     }
 }
 
@@ -122,6 +122,10 @@ impl VerifyingKey {
         let data = self.0.to_bytes();
         base58::encode(&data)
     }
+
+    pub fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError> {
+        self.0.verify_strict(message, &signature.0)
+    }
 }
 
 impl Serialize for VerifyingKey {
@@ -155,9 +159,9 @@ impl From<&VerifyingKey> for String {
     }
 }
 
-impl ToString for VerifyingKey {
-    fn to_string(&self) -> String {
-        self.to_base58()
+impl Display for VerifyingKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_base58())
     }
 }
 
@@ -224,8 +228,8 @@ impl From<&Signature> for String {
     }
 }
 
-impl ToString for Signature {
-    fn to_string(&self) -> String {
-        self.to_base58()
+impl Display for Signature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_base58())
     }
 }

@@ -1,7 +1,7 @@
 use blake3::{Hash as CryptoHash, Hasher as CryptoHasher};
 use ppppp_base58 as base58;
 use serde::{Deserialize, Serialize, Serializer};
-use std::{convert::TryFrom, io::Write, str::FromStr};
+use std::{convert::TryFrom, fmt::Display, io::Write, str::FromStr};
 use thiserror::Error as ThisError;
 
 #[derive(Debug, ThisError)]
@@ -79,9 +79,9 @@ impl From<&Hash> for String {
     }
 }
 
-impl ToString for Hash {
-    fn to_string(&self) -> String {
-        self.to_base58()
+impl Display for Hash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_base58())
     }
 }
 

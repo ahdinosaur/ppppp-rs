@@ -3,11 +3,12 @@ use std::collections::{HashMap, HashSet};
 use crate::{AccountId, MootDetails, Msg, MsgId};
 
 #[derive(Clone, Debug, thiserror::Error)]
-#[error("tangle is missing root message")]
+#[error("tangle is missing root message: {root_msg_id}")]
 pub struct TangleMissingRootMessageError {
-    root_msg_id: MsgId,
+    pub root_msg_id: MsgId,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TangleType {
     Feed,
     Account,

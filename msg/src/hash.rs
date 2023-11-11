@@ -1,7 +1,7 @@
 use ppppp_base58 as base58;
 use ppppp_crypto::Hash;
 use serde::{Deserialize, Serialize, Serializer};
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom, fmt::Display, str::FromStr};
 use thiserror::Error as ThisError;
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
@@ -74,9 +74,9 @@ impl From<&MsgMetadataHash> for String {
     }
 }
 
-impl ToString for MsgMetadataHash {
-    fn to_string(&self) -> String {
-        self.to_base58()
+impl Display for MsgMetadataHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_base58())
     }
 }
 
@@ -141,9 +141,9 @@ impl From<&MsgDataHash> for String {
     }
 }
 
-impl ToString for MsgDataHash {
-    fn to_string(&self) -> String {
-        self.to_base58()
+impl Display for MsgDataHash {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_base58())
     }
 }
 

@@ -1,16 +1,24 @@
+use std::{io, ops::Deref};
+
 use ppppp_crypto::{SignatureError, VerifyingKey};
 use serde_json::Error as JsonError;
 
-use crate::{Msg, MsgData, MsgId, Tangle};
+use crate::{
+    msg::MsgError, tangle::TangleMissingRootMessageError, Msg, MsgData, MsgId, Tangle, TangleType,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ValidateError {
     #[error("invalid version: {version}")]
     Version { version: u8 },
+    #[error("io error: {0}")]
+    Io(#[source] io::Error),
     #[error("failed to serialize to canonical json: {0}")]
     JsonCanon(#[source] JsonError),
     #[error("invalid signature: {0}")]
     Signature(#[source] SignatureError),
+    #[error("tangle missing root message: {root_msg_id}")]
+    TangleMissingRootMessage { root_msg_id: MsgId },
     #[error("tangle missing root message id: {root_msg_id}")]
     MsgTanglesMissingTangleRootMsgId { root_msg_id: MsgId },
     #[error("msg data type doesn't match feed type: {data_type}")]
@@ -43,22 +51,33 @@ pub fn validate(
     validate_version(msg)?;
     validate_data(msg)?;
 
-    if tangle.type() == TangleType::
+    let tangle_type =
+        tangle
+            .get_type()
+            .map_err(|TangleMissingRootMessageError { root_msg_id }| {
+                ValidateError::TangleMissingRootMessage { root_msg_id }
+            })?;
+    if tangle_type == TangleType::Feed && msg.is_moot(None, None) {
+        // nothing else to check
+        return Ok(());
+    }
 
-    if tangle.size() == 0 {
+    validate_data_size_hash(msg)?;
+    // TODO validate_domain
+    // TODO validate_pubkey_and_account
+    if msg_id == tangle_root_msg_id {
         validate_tangle_root(msg, msg_id, tangle_root_msg_id)?;
     } else {
         validate_tangle(msg, tangle, tangle_root_msg_id)?;
     }
 
-    validate_data(msg)?;
     validate_signature(msg)?;
 
     Ok(())
 }
 
 pub fn validate_version(msg: &Msg) -> Result<(), ValidateError> {
-    let version = *msg.metadata().version();
+    let version = msg.metadata().version();
     if version != 3 {
         Err(ValidateError::Version { version })
     } else {
@@ -78,6 +97,7 @@ fn validate_data(msg: &Msg) -> Result<(), ValidateError> {
 }
 
 fn validate_data_size_hash(msg: &Msg) -> Result<(), ValidateError> {
+    let data = msg.data();
     let metadata = msg.metadata();
 
     if data.is_null() {
@@ -87,7 +107,7 @@ fn validate_data_size_hash(msg: &Msg) -> Result<(), ValidateError> {
     let (data_hash, data_size) = data.to_hash();
     if &Some(data_hash) != metadata.data_hash() {
         Err(ValidateError::DataHashDoesNotMatchMetadata)
-    } else if &data_size != metadata.data_size() {
+    } else if data_size != metadata.data_size() {
         Err(ValidateError::DataSizeDoesNotMatchMetadata)
     } else {
         Ok(())
@@ -95,16 +115,15 @@ fn validate_data_size_hash(msg: &Msg) -> Result<(), ValidateError> {
 }
 
 pub fn validate_signature(msg: &Msg) -> Result<(), ValidateError> {
-    let metadata = msg.metadata();
+    let signable = msg.metadata().to_signable().map_err(|err| match err {
+        MsgError::JsonCanon(json_err) => ValidateError::JsonCanon(json_err),
+        MsgError::Io(io_err) => ValidateError::Io(io_err),
+    })?;
+    let verifying_key = msg.verifying_key();
     let signature = msg.signature();
 
-    let author_id = metadata.author_id();
-    let pubkey = author_id.to_pubkey().map_err(ValidateError::Pubkey)?;
-
-    let signable = json_canon::to_vec(metadata).map_err(ValidateError::JsonCanon)?;
-
-    pubkey
-        .verify_strict(&signable, &signature.to_signature())
+    verifying_key
+        .verify(&signable, signature)
         .map_err(ValidateError::Signature)?;
 
     Ok(())

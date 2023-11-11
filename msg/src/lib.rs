@@ -7,7 +7,7 @@ pub use crate::hash::{HashFromBase58Error, MsgDataHash, MsgMetadataHash};
 pub use crate::msg::{
     AccountId, Msg, MsgData, MsgDomain, MsgId, MsgMetadata, MsgSignature, MsgTangle, MsgTangles,
 };
-pub use crate::tangle::Tangle;
+pub use crate::tangle::{Tangle, TangleType};
 pub use crate::validate::{validate, ValidateError};
 
 pub struct MootDetails {
