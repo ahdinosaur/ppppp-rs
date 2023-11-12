@@ -34,7 +34,7 @@ impl Hash {
 
     pub fn from_base58(base58_str: &str) -> Result<Self, HashFromBase58Error> {
         let data = base58::decode(base58_str).map_err(HashFromBase58Error::Decode)?;
-        if data.len() != 64 {
+        if data.len() != 32 {
             return Err(HashFromBase58Error::Size { size: data.len() });
         }
         let bytes = data.try_into().unwrap();
@@ -119,11 +119,26 @@ impl Write for Hasher {
 
 #[cfg(test)]
 mod tests {
+    use std::error::Error;
+
     use super::*;
 
     #[test]
-    fn test_msg_hash_roundtrip() -> Result<(), HashFromBase58Error> {
-        let msg_hash_str = "Cz1jtXr2oBrhk8czWiz6kHCz1jtXr2oBrhk8czWiz6kH";
+    fn hash_hello_world() -> Result<(), Box<dyn Error>> {
+        let input = "hello world";
+        let mut hasher = Hasher::new();
+        write!(hasher, "{}", input)?;
+        let hash = hasher.finalize();
+        assert_eq!(
+            hash.to_string(),
+            "FVPfbg9bK7mj7jnaSRXhuVcVakkXcjMPgSwxmauUofYf"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn base58_roundtrip() -> Result<(), HashFromBase58Error> {
+        let msg_hash_str = "FVPfbg9bK7mj7jnaSRXhuVcVakkXcjMPgSwxmauUofYf";
         let msg_hash = Hash::from_base58(msg_hash_str)?;
         assert_eq!(msg_hash_str, msg_hash.to_string());
         Ok(())

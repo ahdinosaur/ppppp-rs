@@ -30,7 +30,7 @@ impl MsgMetadataHash {
 
     pub fn from_base58(base58_str: &str) -> Result<Self, HashFromBase58Error> {
         let data = base58::decode(base58_str).map_err(HashFromBase58Error::Decode)?;
-        if data.len() != 64 {
+        if data.len() != 16 {
             return Err(HashFromBase58Error::Size { size: data.len() });
         }
         let key = Self::read_from(&data).unwrap();
@@ -97,7 +97,7 @@ impl MsgDataHash {
 
     pub fn from_base58(base58_str: &str) -> Result<Self, HashFromBase58Error> {
         let data = base58::decode(base58_str).map_err(HashFromBase58Error::Decode)?;
-        if data.len() != 64 {
+        if data.len() != 16 {
             return Err(HashFromBase58Error::Size { size: data.len() });
         }
         let key = Self::read_from(&data).unwrap();
