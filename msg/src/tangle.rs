@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use lipmaa_link::lipmaa;
+
 use crate::{AccountId, MootDetails, Msg, MsgId};
 
 #[derive(Clone, Debug, thiserror::Error)]
@@ -236,32 +238,4 @@ impl Tangle {
         }
         str
     }
-}
-
-fn lipmaa(n: u64) -> u64 {
-    let mut m = 1;
-    let mut po3 = 3;
-    let mut u = n;
-
-    // find k such that (3^k - 1)/2 >= n
-    while m < n {
-        po3 *= 3;
-        m = (po3 - 1) / 2;
-    }
-
-    // find longest possible backjump
-    po3 /= 3;
-    if m != n {
-        while u != 0 {
-            m = (po3 - 1) / 2;
-            po3 /= 3;
-            u %= m;
-        }
-
-        if m != po3 {
-            po3 = m;
-        }
-    }
-
-    n - po3
 }
