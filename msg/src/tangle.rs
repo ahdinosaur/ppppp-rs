@@ -116,7 +116,7 @@ impl Tangle {
         self.depth.get(msg_hash).cloned()
     }
 
-    fn is_feed(&self) -> bool {
+    pub fn is_feed(&self) -> bool {
         let Some(ref root_msg) = self.root_msg else {
             eprintln!("Tangle is missing root message");
             return false;
@@ -128,7 +128,7 @@ impl Tangle {
         &self.root_msg_id
     }
 
-    pub fn moot_details(&self) -> Option<MootDetails> {
+    pub fn get_moot_details(&self) -> Option<MootDetails> {
         if !self.is_feed() {
             return None;
         }
@@ -145,9 +145,9 @@ impl Tangle {
     }
 
     pub fn get_type(&self) -> Result<TangleType, TangleMissingRootMessageError> {
-        let Some(root_msg) = self.root_msg else {
+        let Some(ref root_msg) = self.root_msg else {
             return Err(TangleMissingRootMessageError {
-                root_msg_id: self.root_msg_id,
+                root_msg_id: self.root_msg_id.clone(),
             });
         };
         if self.is_feed() {
@@ -160,12 +160,12 @@ impl Tangle {
     }
 
     pub fn get_root(&self) -> Result<Msg, TangleMissingRootMessageError> {
-        let Some(root_msg) = self.root_msg else {
+        let Some(ref root_msg) = self.root_msg else {
             return Err(TangleMissingRootMessageError {
-                root_msg_id: self.root_msg_id,
+                root_msg_id: self.root_msg_id.clone(),
             });
         };
-        Ok(root_msg)
+        Ok(root_msg.clone())
     }
 
     pub fn shortest_path_to_root(&self, msg_hash: &MsgId) -> Vec<MsgId> {
@@ -188,11 +188,11 @@ impl Tangle {
     }
 
     pub fn get_minimum_among(&self, msg_ids: Vec<MsgId>) -> Vec<MsgId> {
-        let mut minimum: HashSet<MsgId> = HashSet::from_iter(msg_ids.into_iter());
-        for a in msg_ids {
-            for b in msg_ids {
-                if self.precedes(&a, &b) {
-                    minimum.remove(&b);
+        let mut minimum: HashSet<MsgId> = HashSet::from_iter(msg_ids.iter().cloned());
+        for a in &msg_ids {
+            for b in &msg_ids {
+                if self.precedes(a, b) {
+                    minimum.remove(b);
                 }
             }
         }

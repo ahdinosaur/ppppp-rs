@@ -5,11 +5,12 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Error as JsonError, Map, Value};
 use std::{
     collections::{HashMap, HashSet},
+    fmt::Display,
     io::{self, Write},
     ops::Deref,
 };
 
-use crate::{MsgDataHash, MsgMetadataHash};
+use crate::{MsgDataHash, MsgDomain, MsgMetadataHash};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MsgError {
@@ -166,8 +167,15 @@ pub enum AccountId {
     Any,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, Hash)]
-pub struct MsgDomain(pub String);
+impl Display for AccountId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AccountId::Tangle(msg_id) => write!(f, "AccountId::Tangle({}", msg_id),
+            AccountId::SelfIdentity => write!(f, "AccountId::SelfIdentity"),
+            AccountId::Any => write!(f, "AccountId::Any"),
+        }
+    }
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
 #[serde(deny_unknown_fields)]

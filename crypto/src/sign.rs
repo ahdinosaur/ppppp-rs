@@ -165,6 +165,12 @@ impl Display for VerifyingKey {
     }
 }
 
+impl PartialEq for VerifyingKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_bytes() == other.as_bytes()
+    }
+}
+
 /// An Ed25519 signature
 #[derive(Clone, Debug, Deserialize)]
 #[serde(try_from = "String")]

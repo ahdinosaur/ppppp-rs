@@ -1,10 +1,11 @@
-use std::{io, ops::Deref};
+use std::io;
 
 use ppppp_crypto::{SignatureError, VerifyingKey};
 use serde_json::Error as JsonError;
 
 use crate::{
-    msg::MsgError, tangle::TangleMissingRootMessageError, Msg, MsgData, MsgId, Tangle, TangleType,
+    msg::MsgError, tangle::TangleMissingRootMessageError, AccountId, MootDetails, Msg, MsgData,
+    MsgDomain, MsgId, Tangle, TangleType,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -21,8 +22,28 @@ pub enum ValidateError {
     TangleMissingRootMessage { root_msg_id: MsgId },
     #[error("tangle missing root message id: {root_msg_id}")]
     MsgTanglesMissingTangleRootMsgId { root_msg_id: MsgId },
-    #[error("msg data type doesn't match feed type: {data_type}")]
-    MsgTypeDoesNotMatchFeedType { data_type: String },
+    #[error("domain {msg_domain} should have been feed domain {feed_domain}")]
+    MsgDomainMustBeFeedDomain {
+        msg_domain: MsgDomain,
+        feed_domain: MsgDomain,
+    },
+    #[error("account {msg_account_id} should have been feed domain {feed_account_id}")]
+    MsgAccountMustBeFeedAccount {
+        msg_account_id: AccountId,
+        feed_account_id: AccountId,
+    },
+    #[error("account {account_id} cannot be \"self\" in a feed tangle")]
+    AccountCannotBeSelfInAFeedTangle { account_id: AccountId },
+    #[error("account {account_id} must be \"self\" in a feed tangle")]
+    AccountMustBeSelfInAFeedTangle { account_id: AccountId },
+    #[error("verifying key {verifying_key} should have been one of {verifying_keys:?} from the account {account_id}")]
+    VerifyingKeyMustBeFromAccount {
+        verifying_key: VerifyingKey,
+        verifying_keys: Vec<VerifyingKey>,
+        account_id: AccountId,
+    },
+    #[error("accountTips {account_tips:?} must be none in an account tangle")]
+    AccountTipsMustBeNullInAnAccountTangle { account_tips: Vec<MsgId> },
     #[error("depth of prev {prev_msg_id} is not lower")]
     TanglePrevDepthNotLower { prev_msg_id: MsgId },
     #[error("all prev are locally unknown")]
@@ -45,7 +66,7 @@ pub fn validate(
     msg: &Msg,
     msg_id: &MsgId,
     tangle: &Tangle,
-    verifying_keys: Vec<VerifyingKey>,
+    verifying_keys: &[VerifyingKey],
     tangle_root_msg_id: &MsgId,
 ) -> Result<(), ValidateError> {
     validate_version(msg)?;
@@ -63,8 +84,7 @@ pub fn validate(
     }
 
     validate_data_size_hash(msg)?;
-    // TODO validate_domain
-    // TODO validate_pubkey_and_account
+    validate_verifying_key_and_account(msg, tangle, verifying_keys)?;
     if msg_id == tangle_root_msg_id {
         validate_tangle_root(msg, msg_id, tangle_root_msg_id)?;
     } else {
@@ -114,6 +134,48 @@ fn validate_data_size_hash(msg: &Msg) -> Result<(), ValidateError> {
     }
 }
 
+fn validate_verifying_key_and_account(
+    msg: &Msg,
+    tangle: &Tangle,
+    verifying_keys: &[VerifyingKey],
+) -> Result<(), ValidateError> {
+    let tangle_type =
+        tangle
+            .get_type()
+            .map_err(|TangleMissingRootMessageError { root_msg_id }| {
+                ValidateError::TangleMissingRootMessage { root_msg_id }
+            })?;
+    let account_id = msg.metadata().account_id();
+    let verifying_key = msg.verifying_key();
+
+    if tangle_type == TangleType::Feed || tangle_type == TangleType::Weave {
+        if account_id == &AccountId::SelfIdentity {
+            return Err(ValidateError::AccountCannotBeSelfInAFeedTangle {
+                account_id: account_id.clone(),
+            });
+        }
+        if account_id != &AccountId::Any && verifying_keys.iter().any(|k| k == verifying_key) {
+            return Err(ValidateError::VerifyingKeyMustBeFromAccount {
+                verifying_key: verifying_key.clone(),
+                verifying_keys: verifying_keys.iter().cloned().collect(),
+                account_id: account_id.clone(),
+            });
+        }
+    } else if tangle_type == TangleType::Account {
+        if account_id != &AccountId::SelfIdentity {
+            return Err(ValidateError::AccountMustBeSelfInAFeedTangle {
+                account_id: account_id.clone(),
+            });
+        }
+        if let Some(account_tips) = msg.metadata().account_tips() {
+            return Err(ValidateError::AccountTipsMustBeNullInAnAccountTangle {
+                account_tips: account_tips.clone(),
+            });
+        }
+    }
+    Ok(())
+}
+
 pub fn validate_signature(msg: &Msg) -> Result<(), ValidateError> {
     let signable = msg.metadata().to_signable().map_err(|err| match err {
         MsgError::JsonCanon(json_err) => ValidateError::JsonCanon(json_err),
@@ -147,17 +209,23 @@ pub fn validate_tangle(
     let prev_msg_ids = msg_tangle.prev_msg_ids();
 
     if tangle.is_feed() {
-        let (feed_author_id, feed_data_type) = tangle.get_feed().unwrap();
-        let data_type = metadata.data_type();
-        if data_type != feed_data_type {
-            return Err(ValidateError::MsgTypeDoesNotMatchFeedType {
-                data_type: data_type.to_owned(),
+        let MootDetails {
+            account_id: feed_account_id,
+            domain: feed_domain,
+            ..
+        } = tangle.get_moot_details().unwrap();
+        let msg_domain = msg.metadata().domain();
+        if &feed_domain != msg_domain {
+            return Err(ValidateError::MsgDomainMustBeFeedDomain {
+                msg_domain: msg_domain.clone(),
+                feed_domain,
             });
         }
-        let author_id = metadata.author_id();
-        if author_id != &feed_author_id {
-            return Err(ValidateError::MsgAuthorIdDoesNotMatchFeedAuthorId {
-                author_id: author_id.clone(),
+        let msg_account_id = msg.metadata().account_id();
+        if &feed_account_id != msg_account_id {
+            return Err(ValidateError::MsgAccountMustBeFeedAccount {
+                msg_account_id: msg_account_id.clone(),
+                feed_account_id,
             });
         }
     }
