@@ -1,14 +1,14 @@
 use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
-use ppppp_crypto::{Hasher, Signature, SignatureError, SigningKey, VerifyingKey};
+use ppppp_crypto::{Hasher, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use serde_json::{Error as JsonError, Map, Value};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
-    io::Write,
     ops::Deref,
 };
+use typed_builder::TypedBuilder;
 
 use crate::{MsgDataHash, MsgDomain, MsgMetadataHash};
 
@@ -21,6 +21,22 @@ pub enum MsgError {
 }
 
 pub type MsgId = MsgMetadataHash;
+
+#[derive(Clone, Debug, TypedBuilder)]
+pub struct MsgCreateOpts {
+    #[builder(setter(into))]
+    pub data: MsgData,
+    #[builder(setter(into))]
+    pub domain: MsgDomain,
+    #[builder(setter(into))]
+    pub sign_keypair: SignKeypair,
+    #[builder(setter(into))]
+    pub account_id: AccountId,
+    #[builder(setter(into))]
+    pub account_tips: Option<Vec<MsgId>>,
+    #[builder(setter(into))]
+    pub tangles: MsgTangles,
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
 #[serde(deny_unknown_fields)]
@@ -35,6 +51,42 @@ pub struct Msg {
 }
 
 impl Msg {
+    pub fn create(opts: MsgCreateOpts) -> Result<Self, MsgError> {
+        let MsgCreateOpts {
+            data,
+            domain,
+            sign_keypair,
+            account_id,
+            mut account_tips,
+            tangles,
+        } = opts;
+        let (data_hash, data_size) = data.to_hash();
+        if let Some(ref mut account_tips) = account_tips {
+            account_tips.sort();
+        }
+        let metadata = MsgMetadata {
+            data_hash: Some(data_hash),
+            data_size,
+            account_id,
+            account_tips,
+            tangles,
+            domain,
+            version: 3,
+        };
+
+        let signing_key = sign_keypair.signing_key();
+        let verifying_key = sign_keypair.verifying_key();
+
+        let signature = metadata.to_signature(signing_key)?;
+
+        Ok(Msg {
+            data,
+            metadata,
+            verifying_key: verifying_key.clone(),
+            signature,
+        })
+    }
+
     pub fn id(&self) -> Result<MsgId, MsgError> {
         let hash = self.metadata.to_hash()?;
         Ok(hash)
@@ -55,6 +107,12 @@ impl Msg {
             .verify_signature(self.verifying_key(), self.signature())?;
 
         Ok(())
+    }
+
+    pub fn get_moot_id(account_id: AccountId, domain: MsgDomain) -> Result<MsgId, MsgError> {
+        let moot = MsgMetadata::get_moot(account_id, domain);
+        let hash = moot.to_hash()?;
+        Ok(hash)
     }
 }
 
@@ -170,12 +228,6 @@ impl MsgMetadata {
             tangles: HashMap::new(),
             version: 3,
         }
-    }
-
-    pub fn get_moot_id(account_id: AccountId, domain: MsgDomain) -> Result<MsgId, MsgError> {
-        let moot = Self::get_moot(account_id, domain);
-        let hash = moot.to_hash()?;
-        Ok(hash)
     }
 }
 

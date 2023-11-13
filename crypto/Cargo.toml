@@ -13,3 +13,4 @@ serde = "1.0.192"
 thiserror = "1.0.50"
 zerocopy = { version = "0.7.25", features = ["derive"] }
 zeroize = { version = "1.6.0", features = ["derive"] }
+getter-methods = "1.0.0"

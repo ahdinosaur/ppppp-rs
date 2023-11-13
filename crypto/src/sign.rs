@@ -2,6 +2,7 @@ use ed25519_dalek::{
     Signature as CryptoSignature, Signer, SigningKey as CryptoSigningKey,
     VerifyingKey as CryptoVerifyingKey,
 };
+use getter_methods::GetterMethods;
 use ppppp_base58 as base58;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{convert::TryFrom, fmt::Display, str::FromStr};
@@ -182,6 +183,13 @@ impl PartialEq for VerifyingKey {
     fn eq(&self, other: &Self) -> bool {
         self.as_bytes() == other.as_bytes()
     }
+}
+
+/// A private and public key pair to sign and verify signatures
+#[derive(Clone, Debug, GetterMethods)]
+pub struct SignKeypair {
+    signing_key: SigningKey,
+    verifying_key: VerifyingKey,
 }
 
 /// An Ed25519 signature

@@ -14,7 +14,9 @@ pub enum HashFromBase58Error {
 }
 
 /// A message metadata hash
-#[derive(Clone, Debug, FromZeroes, FromBytes, AsBytes, Deserialize, PartialEq, Eq, Hash)]
+#[derive(
+    Clone, Debug, FromZeroes, FromBytes, AsBytes, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[repr(C)]
 #[serde(try_from = "String")]
 pub struct MsgMetadataHash([u8; 16]);
@@ -81,7 +83,9 @@ impl Display for MsgMetadataHash {
 }
 
 /// A message data hash
-#[derive(Clone, Debug, FromZeroes, FromBytes, AsBytes, Deserialize, PartialEq, Eq, Hash)]
+#[derive(
+    Clone, Debug, FromZeroes, FromBytes, AsBytes, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
 #[repr(C)]
 #[serde(try_from = "String")]
 pub struct MsgDataHash([u8; 16]);
