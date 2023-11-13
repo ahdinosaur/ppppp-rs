@@ -1,6 +1,6 @@
 use ed25519_dalek::{
-    Signature as CryptoSignature, SignatureError as CryptoSignatureError,
-    SigningKey as CryptoSigningKey, VerifyingKey as CryptoVerifyingKey,
+    Signature as CryptoSignature, Signer, SigningKey as CryptoSigningKey,
+    VerifyingKey as CryptoVerifyingKey,
 };
 use ppppp_base58 as base58;
 use serde::{Deserialize, Serialize, Serializer};
@@ -16,7 +16,7 @@ pub enum SignFromBase58Error {
     #[error("Incorrect size: {size}")]
     Size { size: usize },
     #[error("Invalid verifying key: {0}")]
-    VerifyingKey(#[source] CryptoSignatureError),
+    VerifyingKey(#[source] SignatureError),
 }
 
 /// A secret key to sign messages
@@ -48,6 +48,14 @@ impl SigningKey {
     pub fn to_base58(&self) -> String {
         let data = self.0.to_bytes();
         base58::encode(&data)
+    }
+
+    pub fn sign(&self, message: &[u8]) -> Signature {
+        Signature(self.0.sign(message))
+    }
+
+    pub fn try_sign(&self, message: &[u8]) -> Result<Signature, SignatureError> {
+        Ok(Signature(self.0.try_sign(message)?))
     }
 }
 
@@ -96,7 +104,7 @@ pub struct VerifyingKey(CryptoVerifyingKey);
 impl VerifyingKey {
     pub const BYTE_SIZE: usize = 32_usize;
 
-    pub fn from_bytes(bytes: &[u8; Self::BYTE_SIZE]) -> Result<Self, CryptoSignatureError> {
+    pub fn from_bytes(bytes: &[u8; Self::BYTE_SIZE]) -> Result<Self, SignatureError> {
         Ok(Self(CryptoVerifyingKey::from_bytes(bytes)?))
     }
 
@@ -121,6 +129,11 @@ impl VerifyingKey {
     pub fn to_base58(&self) -> String {
         let data = self.0.to_bytes();
         base58::encode(&data)
+    }
+
+    // https://github.com/dalek-cryptography/curve25519-dalek/tree/main/ed25519-dalek#weak-key-forgery-and-verify_strict
+    pub fn is_weak(&self) -> bool {
+        self.0.is_weak()
     }
 
     pub fn verify(&self, message: &[u8], signature: &Signature) -> Result<(), SignatureError> {

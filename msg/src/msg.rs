@@ -1,12 +1,12 @@
 use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
-use ppppp_crypto::{Hasher, Signature, VerifyingKey};
+use ppppp_crypto::{Hasher, Signature, SignatureError, SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use serde_json::{Error as JsonError, Map, Value};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
-    io::{self, Write},
+    io::Write,
     ops::Deref,
 };
 
@@ -16,8 +16,8 @@ use crate::{MsgDataHash, MsgDomain, MsgMetadataHash};
 pub enum MsgError {
     #[error("failed to serialize to canonical json: {0}")]
     JsonCanon(#[source] JsonError),
-    #[error("io error: {0}")]
-    Io(#[source] io::Error),
+    #[error("failed to verify signature: {0}")]
+    Signature(#[source] SignatureError),
 }
 
 pub type MsgId = MsgMetadataHash;
@@ -48,6 +48,13 @@ impl Msg {
             || metadata.account_tips().is_some()
             || !metadata.tangles().is_empty()
             || (find_domain.is_some() && metadata.domain() == &find_domain.unwrap()))
+    }
+
+    pub fn verify_signature(&self) -> Result<(), MsgError> {
+        self.metadata()
+            .verify_signature(self.verifying_key(), self.signature())?;
+
+        Ok(())
     }
 }
 
@@ -127,15 +134,30 @@ impl MsgMetadata {
         Ok(MsgMetadataHash::from_hash(hash))
     }
 
+    pub fn to_signature(&self, signing_key: &SigningKey) -> Result<MsgSignature, MsgError> {
+        let signable = self.to_signable()?;
+        let signature = signing_key
+            .try_sign(&signable)
+            .map_err(MsgError::Signature)?;
+        Ok(MsgSignature(signature))
+    }
+
+    pub fn verify_signature(
+        &self,
+        verifying_key: &VerifyingKey,
+        signature: &MsgSignature,
+    ) -> Result<(), MsgError> {
+        let signable = self.to_signable()?;
+        verifying_key
+            .verify(&signable, signature)
+            .map_err(MsgError::Signature)?;
+        Ok(())
+    }
+
     pub fn to_signable(&self) -> Result<Vec<u8>, MsgError> {
-        let mut signable = Vec::new();
-
         static TAG: &[u8] = ":msg-v3:".as_bytes();
-        signable.write_all(TAG).map_err(MsgError::Io)?;
-
-        json_canon::to_writer(&mut signable, self).map_err(MsgError::JsonCanon)?;
-
-        Ok(signable)
+        let json = json_canon::to_vec(self).map_err(MsgError::JsonCanon)?;
+        Ok([TAG, json.as_slice()].concat())
     }
 
     pub fn get_moot(account_id: AccountId, domain: MsgDomain) -> Self {

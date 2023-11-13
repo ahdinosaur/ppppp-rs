@@ -177,16 +177,10 @@ fn validate_verifying_key_and_account(
 }
 
 pub fn validate_signature(msg: &Msg) -> Result<(), ValidateError> {
-    let signable = msg.metadata().to_signable().map_err(|err| match err {
+    msg.verify_signature().map_err(|err| match err {
         MsgError::JsonCanon(json_err) => ValidateError::JsonCanon(json_err),
-        MsgError::Io(io_err) => ValidateError::Io(io_err),
+        MsgError::Signature(sig_err) => ValidateError::Signature(sig_err),
     })?;
-    let verifying_key = msg.verifying_key();
-    let signature = msg.signature();
-
-    verifying_key
-        .verify(&signable, signature)
-        .map_err(ValidateError::Signature)?;
 
     Ok(())
 }
