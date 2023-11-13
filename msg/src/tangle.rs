@@ -17,6 +17,7 @@ pub enum TangleType {
     Weave,
 }
 
+#[derive(Clone, Debug)]
 pub struct Tangle {
     root_msg_id: MsgId,
     root_msg: Option<Msg>,

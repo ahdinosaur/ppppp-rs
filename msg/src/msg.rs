@@ -10,7 +10,7 @@ use std::{
 };
 use typed_builder::TypedBuilder;
 
-use crate::{MsgDataHash, MsgDomain, MsgMetadataHash};
+use crate::{MsgDataHash, MsgDomain, MsgMetadataHash, Tangle};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MsgError {
@@ -35,7 +35,7 @@ pub struct MsgCreateOpts {
     #[builder(setter(into))]
     pub account_tips: Option<Vec<MsgId>>,
     #[builder(setter(into))]
-    pub tangles: MsgTangles,
+    pub tangles: HashMap<MsgId, Tangle>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
@@ -58,12 +58,28 @@ impl Msg {
             sign_keypair,
             account_id,
             mut account_tips,
-            tangles,
+            tangles: opt_tangles,
         } = opts;
         let (data_hash, data_size) = data.to_hash();
         if let Some(ref mut account_tips) = account_tips {
             account_tips.sort();
         }
+
+        let mut tangles = HashMap::new();
+        for (root_msg_id, tangle) in opt_tangles.iter() {
+            let depth = tangle.get_max_depth() + 1;
+            let lipmaa_set = tangle.get_lipmaa_set(depth);
+            let mut prev_msg_ids: HashSet<_> =
+                lipmaa_set.union(&tangle.get_tips()).cloned().collect();
+            tangles.insert(
+                root_msg_id.clone(),
+                MsgTangle {
+                    prev_msg_ids,
+                    depth,
+                },
+            );
+        }
+
         let metadata = MsgMetadata {
             data_hash: Some(data_hash),
             data_size,
@@ -81,6 +97,34 @@ impl Msg {
 
         Ok(Msg {
             data,
+            metadata,
+            verifying_key: verifying_key.clone(),
+            signature,
+        })
+    }
+
+    pub fn create_moot(
+        account_id: AccountId,
+        domain: MsgDomain,
+        sign_keypair: SignKeypair,
+    ) -> Result<Msg, MsgError> {
+        let metadata = MsgMetadata {
+            data_hash: None,
+            data_size: 0,
+            account_id,
+            account_tips: None,
+            tangles: HashMap::new(),
+            domain,
+            version: 3,
+        };
+
+        let signing_key = sign_keypair.signing_key();
+        let verifying_key = sign_keypair.verifying_key();
+
+        let signature = metadata.to_signature(signing_key)?;
+
+        Ok(Msg {
+            data: MsgData(Value::Null),
             metadata,
             verifying_key: verifying_key.clone(),
             signature,
