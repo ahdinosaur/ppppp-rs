@@ -2,7 +2,7 @@ use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
 use ppppp_crypto::{Hasher, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
-use serde_json::{Error as JsonError, Map, Value};
+use serde_json::{json, Error as JsonError, Map, Value};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
@@ -10,7 +10,7 @@ use std::{
 };
 use typed_builder::TypedBuilder;
 
-use crate::{MsgDataHash, MsgDomain, MsgMetadataHash, Tangle};
+use crate::{AccountId, MsgDataHash, MsgDomain, MsgMetadataHash, Tangle};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MsgError {
@@ -129,6 +129,15 @@ impl Msg {
             verifying_key: verifying_key.clone(),
             signature,
         })
+    }
+
+    pub fn create_account<CreateNonce>(
+        sign_keypair: SignKeypair,
+        domain: MsgDomain,
+        create_nonce: CreateNonce,
+    ) where
+        CreateNonce: Fn() -> Nonce,
+    {
     }
 
     pub fn id(&self) -> Result<MsgId, MsgError> {
@@ -271,26 +280,6 @@ impl MsgMetadata {
             data_size: 0,
             tangles: HashMap::new(),
             version: 3,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(untagged)]
-pub enum AccountId {
-    Tangle(MsgId),
-    #[serde(rename = "self")]
-    SelfIdentity,
-    #[serde(rename = "any")]
-    Any,
-}
-
-impl Display for AccountId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AccountId::Tangle(msg_id) => write!(f, "AccountId::Tangle({}", msg_id),
-            AccountId::SelfIdentity => write!(f, "AccountId::SelfIdentity"),
-            AccountId::Any => write!(f, "AccountId::Any"),
         }
     }
 }

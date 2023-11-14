@@ -2,10 +2,9 @@ use ppppp_base58 as base58;
 use ppppp_crypto::Hash;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{convert::TryFrom, fmt::Display, str::FromStr};
-use thiserror::Error as ThisError;
 use zerocopy::{AsBytes, FromBytes, FromZeroes};
 
-#[derive(Debug, ThisError)]
+#[derive(Debug, thiserror::Error)]
 pub enum HashFromBase58Error {
     #[error("Failed to decode base58: {0}")]
     Decode(#[source] base58::DecodeError),
