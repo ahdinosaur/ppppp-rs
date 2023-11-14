@@ -1,5 +1,6 @@
 use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
+use monostate::MustBe;
 use ppppp_crypto::{
     Hasher, Nonce, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey,
 };
@@ -89,7 +90,7 @@ impl Msg {
             account_tips,
             tangles,
             domain,
-            version: 3,
+            version: Default::default(),
         };
 
         let signing_key = sign_keypair.signing_key();
@@ -117,7 +118,7 @@ impl Msg {
             account_tips: None,
             tangles: HashMap::new(),
             domain,
-            version: 3,
+            version: Default::default(),
         };
 
         let signing_key = sign_keypair.signing_key();
@@ -236,7 +237,7 @@ pub struct MsgMetadata {
     domain: MsgDomain,
     tangles: MsgTangles,
     #[serde(rename = "v")]
-    version: u8,
+    version: MustBe!(3_u8),
 }
 
 impl MsgMetadata {
@@ -281,7 +282,7 @@ impl MsgMetadata {
             data_hash: None,
             data_size: 0,
             tangles: HashMap::new(),
-            version: 3,
+            version: Default::default(),
         }
     }
 }

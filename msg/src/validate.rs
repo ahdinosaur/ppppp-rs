@@ -69,7 +69,6 @@ pub fn validate(
     verifying_keys: &[VerifyingKey],
     tangle_root_msg_id: &MsgId,
 ) -> Result<(), ValidateError> {
-    validate_version(msg)?;
     validate_data(msg)?;
 
     let tangle_type =
@@ -94,15 +93,6 @@ pub fn validate(
     validate_signature(msg)?;
 
     Ok(())
-}
-
-pub fn validate_version(msg: &Msg) -> Result<(), ValidateError> {
-    let version = msg.metadata().version();
-    if version != 3 {
-        Err(ValidateError::Version { version })
-    } else {
-        Ok(())
-    }
 }
 
 fn validate_data(msg: &Msg) -> Result<(), ValidateError> {
