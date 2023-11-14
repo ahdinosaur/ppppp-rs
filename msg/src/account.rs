@@ -1,9 +1,8 @@
 // https://github.com/staltz/ppppp-db/blob/master/protospec.md#account-tangle-msgs
 
-use std::fmt::Display;
-
 use ppppp_crypto::{Nonce, Signature};
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
 use crate::MsgId;
 
@@ -39,6 +38,22 @@ pub enum AccountMsgData {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AccountConsent(Signature);
 
+/// "add" means this shs peer can validly add more keys to the account tangle
+/// "del" means this shs peer can validly revoke keys from the account tangle
+/// "internal-encryption" means this shs peer should get access to symmetric key
+/// "external-encryption" means this shs peer should get access to asymmetric key
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum AccountPower {
+    #[serde(rename = "add")]
+    Add,
+    #[serde(rename = "del")]
+    Del,
+    #[serde(rename = "internal-encryption")]
+    InternalEncryption,
+    #[serde(rename = "external-encryption")]
+    ExternalEncryption,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AccountAdd {
     key: AccountKey,
@@ -52,19 +67,26 @@ pub struct AccountAdd {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum AccountDel {}
+pub struct AccountDel {
+    key: AccountKey,
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum AccountKey {}
+pub enum AccountKeyPurpose {
+    ShsAndExternalSignature, // secret-handshake and digital signatures
+    ExternalEncryption,      // asymmetric encryption
+    InternalSignature,       // digital signature of internal messages
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum AccountPower {
-    #[serde(rename = "add")]
-    Add,
-    #[serde(rename = "del")]
-    Del,
-    #[serde(rename = "internal-encryption")]
-    InternalEncryption,
-    #[serde(rename = "external-encryption")]
-    ExternalEncryption,
+pub enum AccountKeyAlgorithm {
+    Ed25519,                // libsodium crypto_sign_detached
+    X25519Xsalsa20Poly1305, // libsodium crypto_box_easy
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct AccountKey {
+    purpose: AccountKeyPurpose,
+    algorithm: AccountKeyAlgorithm,
+    // TODO bytes
 }

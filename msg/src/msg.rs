@@ -1,6 +1,8 @@
 use getter_methods::GetterMethods;
 use json_canon::to_writer as canon_json_to_writer;
-use ppppp_crypto::{Hasher, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey};
+use ppppp_crypto::{
+    Hasher, Nonce, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Error as JsonError, Map, Value};
 use std::{
