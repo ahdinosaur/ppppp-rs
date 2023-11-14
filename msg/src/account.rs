@@ -1,7 +1,8 @@
 // https://github.com/staltz/ppppp-db/blob/master/protospec.md#account-tangle-msgs
 
-use ppppp_crypto::{Nonce, Signature};
-use serde::{Deserialize, Serialize};
+use monostate::MustBe;
+use ppppp_crypto::{Nonce, Signature, SigningKey};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fmt::Display;
 
 use crate::MsgId;
@@ -72,21 +73,24 @@ pub struct AccountDel {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum AccountKeyPurpose {
-    ShsAndExternalSignature, // secret-handshake and digital signatures
-    ExternalEncryption,      // asymmetric encryption
-    InternalSignature,       // digital signature of internal messages
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum AccountKeyAlgorithm {
-    Ed25519,                // libsodium crypto_sign_detached
-    X25519Xsalsa20Poly1305, // libsodium crypto_box_easy
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct AccountKey {
-    purpose: AccountKeyPurpose,
-    algorithm: AccountKeyAlgorithm,
-    // TODO bytes
+#[serde(tag = "purpose")]
+pub enum AccountKey {
+    // secret-handshake and digital signatures
+    #[serde(rename = "shs-and-external-signature")]
+    ShsAndExternalSignature {
+        algorithm: MustBe!("ed25519"),
+        bytes: SigningKey,
+    },
+    // asymmetric encryption
+    #[serde(rename = "external-encryption")]
+    ExternalEncryption {
+        algorithm: MustBe!("x25519-xsalsa20-poly1305"),
+        // TODO bytes: BoxingKey
+    },
+    // digital signature of internal messages
+    #[serde(rename = "internal-signature")]
+    InternalSignature {
+        algorithm: MustBe!("ed25519"),
+        bytes: SigningKey,
+    },
 }

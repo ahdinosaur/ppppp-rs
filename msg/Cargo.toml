@@ -16,3 +16,4 @@ thiserror = "1.0.50"
 zerocopy = { version = "0.7.25", features = ["derive"] }
 lipmaa-link = "0.2.2"
 typed-builder = "0.18.0"
+monostate = "0.1.9"
