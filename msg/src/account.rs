@@ -1,8 +1,8 @@
 // https://github.com/staltz/ppppp-db/blob/master/protospec.md#account-tangle-msgs
 
 use monostate::MustBe;
-use ppppp_crypto::{Nonce, Signature, SigningKey};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use ppppp_crypto::{Nonce, Signature, VerifyingKey};
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 use crate::MsgId;
@@ -28,11 +28,21 @@ impl Display for AccountId {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(tag = "action", rename = "kebab-case")]
 pub enum AccountMsgData {
-    #[serde(rename = "add")]
-    Add { add: AccountAdd },
-    #[serde(rename = "del")]
-    Del { del: AccountDel },
+    Add {
+        key: AccountKey,
+        // nonce required only on the account tangle's root
+        nonce: Option<Nonce>,
+        // required only on non-root msgs
+        consent: Option<AccountConsent>,
+        // list of powers granted to this key, defaults to []
+        #[serde(rename = "accountPowers", default)]
+        account_powers: Vec<AccountPower>,
+    },
+    Del {
+        key: AccountKey,
+    },
 }
 
 /// base58 encoded signature of the string `:account-add:<ID>` where `<ID>` is the account's ID
@@ -44,53 +54,30 @@ pub struct AccountConsent(Signature);
 /// "internal-encryption" means this shs peer should get access to symmetric key
 /// "external-encryption" means this shs peer should get access to asymmetric key
 #[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename = "kebab-case")]
 pub enum AccountPower {
-    #[serde(rename = "add")]
     Add,
-    #[serde(rename = "del")]
     Del,
-    #[serde(rename = "internal-encryption")]
     InternalEncryption,
-    #[serde(rename = "external-encryption")]
     ExternalEncryption,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct AccountAdd {
-    key: AccountKey,
-    // nonce required only on the account tangle's root
-    nonce: Option<Nonce>,
-    // required only on non-root msgs
-    consent: Option<AccountConsent>,
-    // list of powers granted to this key, defaults to []
-    #[serde(rename = "accountPowers", default)]
-    account_powers: Vec<AccountPower>,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct AccountDel {
-    key: AccountKey,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[serde(tag = "purpose")]
+#[serde(tag = "purpose", rename = "kebab-case")]
 pub enum AccountKey {
     // secret-handshake and digital signatures
-    #[serde(rename = "shs-and-external-signature")]
     ShsAndExternalSignature {
         algorithm: MustBe!("ed25519"),
-        bytes: SigningKey,
+        bytes: VerifyingKey,
     },
     // asymmetric encryption
-    #[serde(rename = "external-encryption")]
     ExternalEncryption {
         algorithm: MustBe!("x25519-xsalsa20-poly1305"),
         // TODO bytes: BoxingKey
     },
     // digital signature of internal messages
-    #[serde(rename = "internal-signature")]
     InternalSignature {
         algorithm: MustBe!("ed25519"),
-        bytes: SigningKey,
+        bytes: VerifyingKey,
     },
 }
