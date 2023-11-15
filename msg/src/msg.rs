@@ -5,10 +5,9 @@ use ppppp_crypto::{
     Hasher, Nonce, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Error as JsonError, Map, Value};
+use serde_json::{Error as JsonError, Map, Value};
 use std::{
     collections::{HashMap, HashSet},
-    fmt::Display,
     ops::Deref,
 };
 use typed_builder::TypedBuilder;
@@ -42,9 +41,8 @@ pub struct MsgCreateOpts {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "camelCase")]
 pub struct Msg {
-    #[serde(rename = "data")]
     data: MsgData,
     metadata: MsgMetadata,
     #[serde(rename = "pubkey")]
@@ -72,8 +70,7 @@ impl Msg {
         for (root_msg_id, tangle) in opt_tangles.iter() {
             let depth = tangle.get_max_depth() + 1;
             let lipmaa_set = tangle.get_lipmaa_set(depth);
-            let mut prev_msg_ids: HashSet<_> =
-                lipmaa_set.union(&tangle.get_tips()).cloned().collect();
+            let prev_msg_ids: HashSet<_> = lipmaa_set.union(&tangle.get_tips()).cloned().collect();
             tangles.insert(
                 root_msg_id.clone(),
                 MsgTangle {
@@ -224,15 +221,12 @@ impl TryFrom<Value> for MsgData {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "camelCase")]
 pub struct MsgMetadata {
     #[serde(rename = "account")]
     account_id: AccountId,
-    #[serde(rename = "accountTips")]
     account_tips: Option<Vec<MsgId>>,
-    #[serde(rename = "dataHash")]
     data_hash: Option<MsgDataHash>,
-    #[serde(rename = "dataSize")]
     data_size: u64,
     domain: MsgDomain,
     tangles: MsgTangles,
@@ -288,7 +282,7 @@ impl MsgMetadata {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, GetterMethods)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "camelCase")]
 pub struct MsgTangle {
     #[serde(rename = "prev")]
     prev_msg_ids: HashSet<MsgId>,
