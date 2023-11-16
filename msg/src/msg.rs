@@ -5,14 +5,17 @@ use ppppp_crypto::{
     Hasher, Nonce, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::{Error as JsonError, Map, Value};
+use serde_json::{from_slice, to_value, Error as JsonError, Map, Value};
 use std::{
     collections::{HashMap, HashSet},
     ops::Deref,
 };
 use typed_builder::TypedBuilder;
 
-use crate::{AccountId, MsgDataHash, MsgDomain, MsgMetadataHash, Tangle};
+use crate::{
+    account::{AccountKey, AccountMsgData, AccountPower},
+    AccountId, MsgDataHash, MsgDomain, MsgMetadataHash, Tangle,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum MsgError {
@@ -34,9 +37,9 @@ pub struct MsgCreateOpts {
     pub sign_keypair: SignKeypair,
     #[builder(setter(into))]
     pub account_id: AccountId,
-    #[builder(setter(into))]
+    #[builder(default, setter(into))]
     pub account_tips: Option<Vec<MsgId>>,
-    #[builder(setter(into))]
+    #[builder(default, setter(into))]
     pub tangles: HashMap<MsgId, Tangle>,
 }
 
@@ -134,15 +137,56 @@ impl Msg {
     pub fn create_account<CreateNonce>(
         sign_keypair: SignKeypair,
         domain: MsgDomain,
-        create_nonce: CreateNonce,
-    ) where
+        create_nonce: Option<CreateNonce>,
+    ) -> Result<Msg, MsgError>
+    where
         CreateNonce: Fn() -> Nonce,
     {
+        let nonce = create_nonce.map(|c| c());
+        let data: Value = to_value(AccountMsgData::Add {
+            key: AccountKey::ShsAndExternalSignature {
+                algorithm: MustBe!("ed25519"),
+                bytes: sign_keypair.verifying_key().clone(),
+            },
+            nonce,
+            consent: None,
+            account_powers: vec![
+                AccountPower::Add,
+                AccountPower::Del,
+                AccountPower::ExternalEncryption,
+            ],
+        })
+        .unwrap();
+        let data = MsgData(data);
+
+        Msg::create(
+            MsgCreateOpts::builder()
+                .data(data)
+                .account_id(AccountId::SelfIdentity)
+                .sign_keypair(sign_keypair)
+                .domain(domain)
+                .build(),
+        )
     }
 
     pub fn id(&self) -> Result<MsgId, MsgError> {
         let hash = self.metadata.to_hash()?;
         Ok(hash)
+    }
+
+    pub fn erase(&self) -> Self {
+        Self {
+            data: MsgData(Value::Null),
+            ..self.clone()
+        }
+    }
+
+    pub fn from_buffer(&self, buffer: &[u8], msg: Msg) -> Result<Msg, JsonError> {
+        let value: Value = from_slice(buffer)?;
+        Ok(Self {
+            data: MsgData(value),
+            ..msg
+        })
     }
 
     pub fn is_moot(&self, account_id: Option<AccountId>, find_domain: Option<MsgDomain>) -> bool {
