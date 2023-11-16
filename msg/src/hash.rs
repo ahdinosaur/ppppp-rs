@@ -1,4 +1,5 @@
 use ppppp_base58 as base58;
+use ppppp_bytes::{AsBytes as PAsBytes, FromBytes as PFromBytes};
 use ppppp_crypto::Hash;
 use serde::{Deserialize, Serialize, Serializer};
 use std::{convert::TryFrom, fmt::Display, str::FromStr};

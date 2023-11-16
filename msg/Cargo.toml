@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 ppppp-base58 = { path = "../base58" }
+ppppp-bytes = { path = "../bytes" }
 ppppp-crypto = { path = "../crypto" }
 getter-methods = "1.0.0"
 json-canon = "0.1.3"

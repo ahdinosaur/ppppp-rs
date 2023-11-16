@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+paste = "1.0.14"
 ppppp-base58 = { path = "../base58" }
 serde = "1.0.192"
 thiserror = "1.0.50"
