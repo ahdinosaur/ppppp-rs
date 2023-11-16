@@ -28,22 +28,18 @@
 
 ### base
 
-- 🟢 `ppppp-base58`: base58 with the ppppp alphabet
+- 🔵 `ppppp-base58`: base58 with the ppppp alphabet
 - 🟢 `ppppp-crypto`: primitive crypto types and operations used by ppppp
   - [sunrise-choir/ssb-crypto](https://github.com/sunrise-choir/ssb-crypto)
 - 🟠 `ppppp-service`: rpc service trait (able to be exposed externally over muxrpc or internally in memory)
 
-### data
+### formats
 
-- 🟢 `ppppp-msg`: message format for ppppp
+- 🟢 `ppppp-msg`: ppppp messages and tangles
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/legacy-msg-data](https://github.com/sunrise-choir/legacy-msg-data)
   - [sunrise-choir/ssb-legacy-msg](https://github.com/sunrise-choir/ssb-legacy-msg)
-- 🟢 `ppppp-tangle`: message tangle format for ppppp
-  - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-casual-sort](https://github.com/sunrise-choir/ssb-casual-sort)
-- 🟠 `ppppp-validate`: validate ppppp messages: individually or as tangles
-  - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-validate](https://github.com/sunrise-choir/ssb-validate)
   - [sunrise-choir/ssb-verify-signatures](https://github.com/sunrise-choir/ssb-verify-signatures)
 - 🔴 `ppppp-account`: account helpers for ppppp
@@ -55,7 +51,7 @@
   - [staltz/ppppp-dict](https://github.com/staltz/ppppp-dict)
 - 🟠 `ppppp-blob`: binary data format for ppppp
 
-### data store
+### stores
 
 - 🟠 `ppppp-key-store`: key store for ppppp: read keys from a file, write keys to a file
   - [staltz/ppppp-keypair](https://github.com/staltz/ppppp-keypair)
