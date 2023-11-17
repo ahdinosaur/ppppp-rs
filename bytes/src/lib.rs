@@ -44,10 +44,10 @@ macro_rules! impl_from_bytes_inputs {
                 }
             }
 
-            struct [<FromBytesVisitor $Type>] {}
+            struct [<FromBytesHumanVisitor $Type>] {}
 
             impl<'de> serde::de::Visitor<'de>
-                for [<FromBytesVisitor $Type>]
+                for [<FromBytesHumanVisitor $Type>]
             {
                 type Value = $Type;
 
@@ -60,6 +60,18 @@ macro_rules! impl_from_bytes_inputs {
                     E: serde::de::Error,
                 {
                     $Type::from_base58(&value).map_err(|err| E::custom(err.to_string()))
+                }
+            }
+
+            struct [<FromBytesRawVisitor $Type>] {}
+
+            impl<'de> serde::de::Visitor<'de>
+                for [<FromBytesRawVisitor $Type>]
+            {
+                type Value = $Type;
+
+                fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                    formatter.write_str("bytes")
                 }
 
                 fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
@@ -77,9 +89,9 @@ macro_rules! impl_from_bytes_inputs {
                     D: serde::de::Deserializer<'de>,
                 {
                     if deserializer.is_human_readable() {
-                        deserializer.deserialize_str([<FromBytesVisitor $Type>] {})
+                        deserializer.deserialize_str([<FromBytesHumanVisitor $Type>] {})
                     } else {
-                        deserializer.deserialize_bytes([<FromBytesVisitor $Type>] {})
+                        deserializer.deserialize_bytes([<FromBytesRawVisitor $Type>] {})
                     }
                 }
             }
