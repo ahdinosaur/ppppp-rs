@@ -28,9 +28,6 @@ pub trait FromBytes<const LENGTH: usize>: Sized {
 macro_rules! impl_from_bytes_inputs {
     ($Type:ty, $LENGTH:expr) => {
         $crate::paste! {
-            use serde::de::Error;
-            use $crate::DeserializeBytesError;
-
             impl TryFrom<String> for $Type {
                 type Error = $crate::DeserializeBytesError;
 

@@ -1,17 +1,7 @@
 use blake3::{Hash as CryptoHash, Hasher as CryptoHasher};
-use ppppp_base58 as base58;
 use ppppp_bytes::{impl_as_bytes_outputs, impl_from_bytes_inputs, AsBytes, FromBytes};
 use serde::{Deserialize, Serialize, Serializer};
 use std::{convert::TryFrom, fmt::Display, io::Write, str::FromStr};
-use thiserror::Error as ThisError;
-
-#[derive(Debug, ThisError)]
-pub enum HashFromBase58Error {
-    #[error("Failed to decode base58: {0}")]
-    Decode(#[source] base58::DecodeError),
-    #[error("Incorrect size: {size}")]
-    Size { size: usize },
-}
 
 /// A cryptographic hash
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -68,6 +58,8 @@ impl Write for Hasher {
 #[cfg(test)]
 mod tests {
     use std::error::Error;
+
+    use ppppp_bytes::DeserializeBytesError;
 
     use super::*;
 
