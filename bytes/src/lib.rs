@@ -2,6 +2,7 @@ use std::convert::Infallible;
 
 use ppppp_base58 as base58;
 
+pub use once_cell::sync::Lazy;
 pub use paste::paste;
 
 #[derive(Debug, thiserror::Error)]
@@ -49,59 +50,88 @@ macro_rules! impl_from_bytes_inputs {
                 }
             }
 
-            mod de {
-                use super::$Type;
-                use $crate::FromBytes;
-
-                pub(crate) struct [<FromBytesHumanVisitor $Type>] {}
-
-                impl<'de> serde::de::Visitor<'de>
-                    for [<FromBytesHumanVisitor $Type>]
-                {
-                    type Value = $Type;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                        formatter.write_str("base58 string")
-                    }
-
-                    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-                    where
-                        E: serde::de::Error,
-                    {
-                        $Type::from_base58(&value).map_err(|err| E::custom(err.to_string()))
-                    }
-                }
-
-                pub(crate) struct [<FromBytesRawVisitor $Type>] {}
-
-                impl<'de> serde::de::Visitor<'de>
-                    for [<FromBytesRawVisitor $Type>]
-                {
-                    type Value = $Type;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                        formatter.write_str("bytes")
-                    }
-
-                    fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
-                    where
-                        E: serde::de::Error,
-                    {
-                        let bytes = value.try_into().map_err(|err: std::array::TryFromSliceError| E::custom(err.to_string()))?;
-                        $Type::from_bytes(bytes).map_err(|err| E::custom(err.to_string()))
-                    }
-                }
-            }
-
             impl<'de> Deserialize<'de> for $Type {
                 fn deserialize<D>(deserializer: D) -> Result<$Type, D::Error>
                 where
                     D: serde::de::Deserializer<'de>,
                 {
+
+                    struct [<FromBytesHumanVisitor $Type>] {}
+
+                    impl<'de> serde::de::Visitor<'de>
+                        for [<FromBytesHumanVisitor $Type>]
+                    {
+                        type Value = $Type;
+
+                        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                            static msg: $crate::Lazy<String> = $crate::Lazy::new(|| format!("base58 string for {} bytes", $LENGTH));
+
+                            formatter.write_str(&msg)
+                        }
+
+                        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+                        where
+                            E: serde::de::Error,
+                        {
+                            $Type::from_base58(&value).map_err(|err| E::custom(err.to_string()))
+                        }
+                    }
+
+                    struct [<FromBytesRawVisitor $Type>] {}
+
+                    impl<'de> serde::de::Visitor<'de>
+                        for [<FromBytesRawVisitor $Type>]
+                    {
+                        type Value = $Type;
+
+                        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                            static msg: $crate::Lazy<String> = $crate::Lazy::new(|| format!("{} bytes", $LENGTH));
+
+                            formatter.write_str(&msg)
+                        }
+
+                        fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
+                        where
+                            E: serde::de::Error,
+                        {
+                            let bytes = value.try_into().map_err(|err: std::array::TryFromSliceError| E::custom(err.to_string()))?;
+                            $Type::from_bytes(bytes).map_err(E::custom)
+                        }
+
+                        fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+                        where
+                            A: serde::de::SeqAccess<'de>,
+                        {
+                            static error_msg: $crate::Lazy<String> = $crate::Lazy::new(|| format!("expected {} bytes", $LENGTH));
+
+                            let mut bytes = [0_u8; $LENGTH];
+                            #[allow(clippy::needless_range_loop)]
+                            for i in 0..$LENGTH {
+                                bytes[i] = seq
+                                    .next_element()?
+                                    .ok_or_else(|| serde::de::Error::invalid_length(i, &error_msg.as_str()))?;
+                            }
+
+                            let remaining = (0..)
+                                .map(|_| seq.next_element::<u8>())
+                                .take_while(|el| matches!(el, Ok(Some(_))))
+                                .count();
+
+                            if remaining > 0 {
+                                return Err(serde::de::Error::invalid_length(
+                                    $LENGTH + remaining,
+                                    &error_msg.as_str(),
+                                ));
+                            }
+
+                            $Type::from_bytes(&bytes).map_err(serde::de::Error::custom)
+                        }
+                    }
+
                     if deserializer.is_human_readable() {
-                        deserializer.deserialize_str(self::de::[<FromBytesHumanVisitor $Type>] {})
+                        deserializer.deserialize_str([<FromBytesHumanVisitor $Type>] {})
                     } else {
-                        deserializer.deserialize_bytes(self::de::[<FromBytesRawVisitor $Type>] {})
+                        deserializer.deserialize_bytes([<FromBytesRawVisitor $Type>] {})
                     }
                 }
             }
