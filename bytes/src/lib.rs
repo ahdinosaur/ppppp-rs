@@ -178,6 +178,45 @@ macro_rules! impl_as_bytes_outputs {
     };
 }
 
+pub trait ToBytes<const LENGTH: usize>: Sized {
+    fn to_bytes(&self) -> [u8; LENGTH];
+
+    fn to_base58(&self) -> String {
+        let data = self.to_bytes();
+        base58::encode(&data)
+    }
+}
+
+#[macro_export]
+macro_rules! impl_to_bytes_outputs {
+    ($Type:ty, $LENGTH:expr) => {
+        impl From<&$Type> for String {
+            fn from(value: &$Type) -> String {
+                value.to_string()
+            }
+        }
+
+        impl Display for $Type {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.to_base58())
+            }
+        }
+
+        impl Serialize for $Type {
+            fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                if serializer.is_human_readable() {
+                    serializer.serialize_str(&self.to_string())
+                } else {
+                    serializer.serialize_bytes(&self.to_bytes())
+                }
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     // use super::*;

@@ -9,7 +9,7 @@ edition = "2021"
 ppppp-base58 = { path = "../base58" }
 ppppp-bytes = { path = "../bytes" }
 blake3 = "1.5.0"
-ed25519-dalek = { version = "2.0.0", features = ["zeroize", "rand_core"] }
+ed25519-dalek = { version = "2.1.0", features = ["zeroize", "rand_core"] }
 serde = "1.0.192"
 thiserror = "1.0.50"
 zerocopy = { version = "0.7.25", features = ["derive"] }

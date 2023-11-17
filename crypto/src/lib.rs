@@ -5,5 +5,5 @@ mod sign;
 pub use crate::hash::{Hash, Hasher};
 pub use crate::nonce::Nonce;
 pub use crate::sign::{
-    SignFromBase58Error, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey,
+    SignDeserializeBytesError, SignKeypair, Signature, SignatureError, SigningKey, VerifyingKey,
 };
