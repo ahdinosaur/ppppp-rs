@@ -61,6 +61,14 @@ macro_rules! impl_from_bytes_inputs {
                 {
                     $Type::from_base58(&value).map_err(|err| E::custom(err.to_string()))
                 }
+
+                fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
+                where
+                    E: serde::de::Error,
+                {
+                    let bytes = value.try_into().map_err(|err: std::array::TryFromSliceError| E::custom(err.to_string()))?;
+                    Ok($Type::from_bytes(bytes))
+                }
             }
 
             impl<'de> Deserialize<'de> for $Type {
@@ -68,7 +76,11 @@ macro_rules! impl_from_bytes_inputs {
                 where
                     D: serde::de::Deserializer<'de>,
                 {
-                    deserializer.deserialize_str([<FromBytesVisitor $Type>] {})
+                    if deserializer.is_human_readable() {
+                        deserializer.deserialize_str([<FromBytesVisitor $Type>] {})
+                    } else {
+                        deserializer.deserialize_bytes([<FromBytesVisitor $Type>] {})
+                    }
                 }
             }
         }
@@ -104,7 +116,11 @@ macro_rules! impl_as_bytes_outputs {
             where
                 S: Serializer,
             {
-                serializer.serialize_str(&self.to_string())
+                if serializer.is_human_readable() {
+                    serializer.serialize_str(&self.to_string())
+                } else {
+                    serializer.serialize_bytes(self.as_bytes())
+                }
             }
         }
     };
