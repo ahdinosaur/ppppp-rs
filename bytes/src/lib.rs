@@ -4,6 +4,7 @@ use ppppp_base58 as base58;
 
 pub use once_cell::sync::Lazy;
 pub use paste::paste;
+pub use serde;
 
 #[derive(Debug, thiserror::Error)]
 pub enum DeserializeBytesError<Error: std::error::Error = Infallible> {
@@ -42,7 +43,7 @@ macro_rules! impl_from_bytes_inputs {
                 }
             }
 
-            impl FromStr for $Type {
+            impl std::str::FromStr for $Type {
                 type Err = $crate::DeserializeBytesError<<$Type as $crate::FromBytes<$LENGTH>>::Error>;
 
                 fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -50,15 +51,15 @@ macro_rules! impl_from_bytes_inputs {
                 }
             }
 
-            impl<'de> Deserialize<'de> for $Type {
+            impl<'de> $crate::serde::Deserialize<'de> for $Type {
                 fn deserialize<D>(deserializer: D) -> Result<$Type, D::Error>
                 where
-                    D: serde::de::Deserializer<'de>,
+                    D: $crate::serde::de::Deserializer<'de>,
                 {
 
                     struct [<FromBytesHumanVisitor $Type>] {}
 
-                    impl<'de> serde::de::Visitor<'de>
+                    impl<'de> $crate::serde::de::Visitor<'de>
                         for [<FromBytesHumanVisitor $Type>]
                     {
                         type Value = $Type;
@@ -71,7 +72,7 @@ macro_rules! impl_from_bytes_inputs {
 
                         fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
                         where
-                            E: serde::de::Error,
+                            E: $crate::serde::de::Error,
                         {
                             $Type::from_base58(&value).map_err(|err| E::custom(err.to_string()))
                         }
@@ -79,7 +80,7 @@ macro_rules! impl_from_bytes_inputs {
 
                     struct [<FromBytesRawVisitor $Type>] {}
 
-                    impl<'de> serde::de::Visitor<'de>
+                    impl<'de> $crate::serde::de::Visitor<'de>
                         for [<FromBytesRawVisitor $Type>]
                     {
                         type Value = $Type;
@@ -92,7 +93,7 @@ macro_rules! impl_from_bytes_inputs {
 
                         fn visit_bytes<E>(self, value: &[u8]) -> Result<Self::Value, E>
                         where
-                            E: serde::de::Error,
+                            E: $crate::serde::de::Error,
                         {
                             let bytes = value.try_into().map_err(|err: std::array::TryFromSliceError| E::custom(err.to_string()))?;
                             $Type::from_bytes(bytes).map_err(E::custom)
@@ -100,7 +101,7 @@ macro_rules! impl_from_bytes_inputs {
 
                         fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
                         where
-                            A: serde::de::SeqAccess<'de>,
+                            A: $crate::serde::de::SeqAccess<'de>,
                         {
                             static error_msg: $crate::Lazy<String> = $crate::Lazy::new(|| format!("expected {} bytes", $LENGTH));
 
@@ -109,7 +110,7 @@ macro_rules! impl_from_bytes_inputs {
                             for i in 0..$LENGTH {
                                 bytes[i] = seq
                                     .next_element()?
-                                    .ok_or_else(|| serde::de::Error::invalid_length(i, &error_msg.as_str()))?;
+                                    .ok_or_else(|| $crate::serde::de::Error::invalid_length(i, &error_msg.as_str()))?;
                             }
 
                             let remaining = (0..)
@@ -118,13 +119,13 @@ macro_rules! impl_from_bytes_inputs {
                                 .count();
 
                             if remaining > 0 {
-                                return Err(serde::de::Error::invalid_length(
+                                return Err($crate::serde::de::Error::invalid_length(
                                     $LENGTH + remaining,
                                     &error_msg.as_str(),
                                 ));
                             }
 
-                            $Type::from_bytes(&bytes).map_err(serde::de::Error::custom)
+                            $Type::from_bytes(&bytes).map_err($crate::serde::de::Error::custom)
                         }
                     }
 
@@ -157,16 +158,16 @@ macro_rules! impl_as_bytes_outputs {
             }
         }
 
-        impl Display for $Type {
+        impl std::fmt::Display for $Type {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", self.to_base58())
             }
         }
 
-        impl Serialize for $Type {
+        impl $crate::serde::Serialize for $Type {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
-                S: Serializer,
+                S: $crate::serde::Serializer,
             {
                 if serializer.is_human_readable() {
                     serializer.serialize_str(&self.to_string())
@@ -196,16 +197,16 @@ macro_rules! impl_to_bytes_outputs {
             }
         }
 
-        impl Display for $Type {
+        impl std::fmt::Display for $Type {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{}", self.to_base58())
             }
         }
 
-        impl Serialize for $Type {
+        impl $crate::serde::Serialize for $Type {
             fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where
-                S: Serializer,
+                S: $crate::serde::Serializer,
             {
                 if serializer.is_human_readable() {
                     serializer.serialize_str(&self.to_string())

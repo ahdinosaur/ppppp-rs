@@ -7,12 +7,7 @@ use ppppp_bytes::{
     impl_as_bytes_outputs, impl_from_bytes_inputs, impl_to_bytes_outputs, AsBytes,
     DeserializeBytesError, FromBytes, ToBytes,
 };
-use serde::{Deserialize, Serialize, Serializer};
-use std::{
-    convert::{Infallible, TryFrom},
-    fmt::Display,
-    str::FromStr,
-};
+use std::convert::Infallible;
 
 pub use ed25519_dalek::SignatureError;
 

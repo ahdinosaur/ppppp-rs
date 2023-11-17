@@ -1,6 +1,5 @@
 use ppppp_bytes::{impl_as_bytes_outputs, impl_from_bytes_inputs, AsBytes, FromBytes};
-use serde::{Deserialize, Serialize, Serializer};
-use std::{convert::Infallible, fmt::Display, str::FromStr};
+use std::convert::Infallible;
 
 /// A 32 byte nonce
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
