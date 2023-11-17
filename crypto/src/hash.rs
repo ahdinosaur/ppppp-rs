@@ -1,19 +1,24 @@
 use blake3::{Hash as CryptoHash, Hasher as CryptoHasher};
 use ppppp_bytes::{impl_as_bytes_outputs, impl_from_bytes_inputs, AsBytes, FromBytes};
 use serde::{Deserialize, Serialize, Serializer};
-use std::{convert::TryFrom, fmt::Display, io::Write, str::FromStr};
+use std::{
+    convert::{Infallible, TryFrom},
+    fmt::Display,
+    io::Write,
+    str::FromStr,
+};
 
 /// A cryptographic hash
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Hash(CryptoHash);
 
 impl FromBytes<32> for Hash {
-    fn from_bytes(bytes: &[u8; 32]) -> Self {
-        Hash(CryptoHash::from_bytes(*bytes))
+    type Error = Infallible;
+
+    fn from_bytes(bytes: &[u8; 32]) -> Result<Self, Self::Error> {
+        Ok(Hash(CryptoHash::from_bytes(*bytes)))
     }
 }
-
-impl_from_bytes_inputs!(Hash, 32_usize);
 
 impl AsBytes<32> for Hash {
     fn as_bytes(&self) -> &[u8; 32] {
@@ -21,6 +26,7 @@ impl AsBytes<32> for Hash {
     }
 }
 
+impl_from_bytes_inputs!(Hash, 32_usize);
 impl_as_bytes_outputs!(Hash, 32_usize);
 
 pub struct Hasher(CryptoHasher);

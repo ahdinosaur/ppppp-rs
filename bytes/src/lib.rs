@@ -1,26 +1,31 @@
+use std::convert::Infallible;
+
 use ppppp_base58 as base58;
 
 pub use paste::paste;
 
 #[derive(Debug, thiserror::Error)]
-pub enum DeserializeBytesError {
+pub enum DeserializeBytesError<Error: std::error::Error = Infallible> {
     #[error("Failed to decode base58: {0}")]
     DecodeBase58(#[source] base58::DecodeError),
     #[error("Incorrect size: {size}")]
     Size { size: usize },
+    #[error("{0}")]
+    Bytes(#[source] Error),
 }
 
 pub trait FromBytes<const LENGTH: usize>: Sized {
-    fn from_bytes(bytes: &[u8; LENGTH]) -> Self;
+    type Error: std::error::Error;
 
-    fn from_base58(base58_str: &str) -> Result<Self, DeserializeBytesError> {
+    fn from_bytes(bytes: &[u8; LENGTH]) -> Result<Self, Self::Error>;
+
+    fn from_base58(base58_str: &str) -> Result<Self, DeserializeBytesError<Self::Error>> {
         let data = base58::decode(base58_str).map_err(DeserializeBytesError::DecodeBase58)?;
         if data.len() != LENGTH {
             return Err(DeserializeBytesError::Size { size: data.len() });
         }
         let bytes = data.try_into().unwrap();
-        let key = Self::from_bytes(&bytes);
-        Ok(key)
+        Self::from_bytes(&bytes).map_err(DeserializeBytesError::Bytes)
     }
 }
 
@@ -29,7 +34,7 @@ macro_rules! impl_from_bytes_inputs {
     ($Type:ty, $LENGTH:expr) => {
         $crate::paste! {
             impl TryFrom<String> for $Type {
-                type Error = $crate::DeserializeBytesError;
+                type Error = $crate::DeserializeBytesError<<$Type as $crate::FromBytes<$LENGTH>>::Error>;
 
                 fn try_from(value: String) -> Result<Self, Self::Error> {
                     $Type::from_base58(&value)
@@ -37,7 +42,7 @@ macro_rules! impl_from_bytes_inputs {
             }
 
             impl FromStr for $Type {
-                type Err = $crate::DeserializeBytesError;
+                type Err = $crate::DeserializeBytesError<<$Type as $crate::FromBytes<$LENGTH>>::Error>;
 
                 fn from_str(s: &str) -> Result<Self, Self::Err> {
                     $Type::from_base58(s)
@@ -83,7 +88,7 @@ macro_rules! impl_from_bytes_inputs {
                         E: serde::de::Error,
                     {
                         let bytes = value.try_into().map_err(|err: std::array::TryFromSliceError| E::custom(err.to_string()))?;
-                        Ok($Type::from_bytes(bytes))
+                        $Type::from_bytes(bytes).map_err(|err| E::custom(err.to_string()))
                     }
                 }
             }
