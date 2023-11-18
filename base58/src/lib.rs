@@ -1,5 +1,3 @@
-use base_x;
-
 const BASE58_BITCOIN_ALPHABET: &[u8; 58] =
     b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 

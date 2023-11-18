@@ -75,7 +75,7 @@ impl Msg {
             let lipmaa_set = tangle.get_lipmaa_set(depth);
             let prev_msg_ids: HashSet<_> = lipmaa_set.union(&tangle.get_tips()).cloned().collect();
             tangles.insert(
-                root_msg_id.clone(),
+                *root_msg_id,
                 MsgTangle {
                     prev_msg_ids,
                     depth,
