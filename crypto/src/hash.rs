@@ -1,9 +1,6 @@
 use blake3::{Hash as CryptoHash, Hasher as CryptoHasher};
 use ppppp_bytes::{impl_as_bytes_outputs, impl_from_bytes_inputs, AsBytes, FromBytes};
-use std::{
-    convert::Infallible,
-    io::Write,
-};
+use std::{convert::Infallible, io::Write};
 
 /// A cryptographic hash
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
