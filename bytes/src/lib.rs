@@ -143,6 +143,10 @@ macro_rules! impl_from_bytes_inputs {
 pub trait AsBytes<const LENGTH: usize>: Sized {
     fn as_bytes(&self) -> &[u8; LENGTH];
 
+    fn to_bytes(&self) -> [u8; LENGTH] {
+        *self.as_bytes()
+    }
+
     fn to_base58(&self) -> String {
         let data = self.as_bytes();
         base58::encode(data)
