@@ -38,8 +38,8 @@ pub enum ValidateError {
     AccountMustBeSelfInAFeedTangle { account_id: AccountId },
     #[error("verifying key {verifying_key} should have been one of {verifying_keys:?} from the account {account_id}")]
     VerifyingKeyMustBeFromAccount {
-        verifying_key: VerifyingKey,
-        verifying_keys: Vec<VerifyingKey>,
+        verifying_key: Box<VerifyingKey>,
+        verifying_keys: Box<Vec<VerifyingKey>>,
         account_id: AccountId,
     },
     #[error("accountTips {account_tips:?} must be none in an account tangle")]
@@ -146,8 +146,8 @@ fn validate_verifying_key_and_account(
         }
         if account_id != &AccountId::Any && verifying_keys.iter().any(|k| k == verifying_key) {
             return Err(ValidateError::VerifyingKeyMustBeFromAccount {
-                verifying_key: verifying_key.clone(),
-                verifying_keys: verifying_keys.iter().cloned().collect(),
+                verifying_key: Box::new(verifying_key.clone()),
+                verifying_keys: Box::new(verifying_keys.to_vec()),
                 account_id: account_id.clone(),
             });
         }
@@ -185,7 +185,7 @@ pub fn validate_tangle(
     let msg_tangles = metadata.tangles();
     let msg_tangle = msg_tangles.get(tangle_root_msg_id).ok_or(
         ValidateError::MsgTanglesMissingTangleRootMsgId {
-            root_msg_id: tangle_root_msg_id.clone(),
+            root_msg_id: *tangle_root_msg_id,
         },
     )?;
 
@@ -226,9 +226,9 @@ pub fn validate_tangle(
         let prev_depth = tangle.get_depth(prev_msg_id).unwrap();
 
         let diff = depth - prev_depth;
-        if diff <= 0 {
+        if diff == 0 {
             return Err(ValidateError::TanglePrevDepthNotLower {
-                prev_msg_id: prev_msg_id.clone(),
+                prev_msg_id: *prev_msg_id,
             });
         }
         if diff < min_diff {

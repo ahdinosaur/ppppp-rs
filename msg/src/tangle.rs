@@ -43,34 +43,33 @@ impl Tangle {
 
     pub fn add(&mut self, msg_hash: &MsgId, msg: &Msg) {
         if msg_hash == &self.root_msg_id && self.root_msg.is_none() {
-            self.tips.insert(msg_hash.clone());
-            self.per_depth.insert(0, HashSet::from([msg_hash.clone()]));
-            self.depth.insert(msg_hash.clone(), 0);
+            self.tips.insert(*msg_hash);
+            self.per_depth.insert(0, HashSet::from([*msg_hash]));
+            self.depth.insert(*msg_hash, 0);
             self.root_msg = Some(msg.clone());
             return;
         }
 
         let tangles = msg.metadata().tangles();
         if msg_hash != &self.root_msg_id && tangles.contains_key(&self.root_msg_id) {
-            self.tips.insert(msg_hash.clone());
+            self.tips.insert(*msg_hash);
 
             let tangle = tangles.get(&self.root_msg_id).unwrap();
             let prev_msg_ids = tangle.prev_msg_ids();
             for prev_msg_hash in prev_msg_ids.clone() {
                 self.tips.remove(&prev_msg_hash);
             }
-            self.prev_msg_ids
-                .insert(msg_hash.clone(), prev_msg_ids.clone());
+            self.prev_msg_ids.insert(*msg_hash, prev_msg_ids.clone());
 
             let tangle = tangles.get(&self.root_msg_id).unwrap();
             let depth = tangle.depth();
             if depth > self.max_depth {
                 self.max_depth = depth;
             }
-            self.depth.insert(msg_hash.clone(), depth);
+            self.depth.insert(*msg_hash, depth);
 
             let at_depth = self.per_depth.entry(depth).or_default();
-            at_depth.insert(msg_hash.clone());
+            at_depth.insert(*msg_hash);
         }
     }
 
@@ -143,14 +142,14 @@ impl Tangle {
         Some(MootDetails {
             account_id: metadata.account_id().clone(),
             domain: metadata.domain().clone(),
-            id: self.root_msg_id.clone(),
+            id: self.root_msg_id,
         })
     }
 
     pub fn get_type(&self) -> Result<TangleType, TangleMissingRootMessageError> {
         let Some(ref root_msg) = self.root_msg else {
             return Err(TangleMissingRootMessageError {
-                root_msg_id: self.root_msg_id.clone(),
+                root_msg_id: self.root_msg_id,
             });
         };
         if self.is_feed() {
@@ -165,7 +164,7 @@ impl Tangle {
     pub fn get_root(&self) -> Result<Msg, TangleMissingRootMessageError> {
         let Some(ref root_msg) = self.root_msg else {
             return Err(TangleMissingRootMessageError {
-                root_msg_id: self.root_msg_id.clone(),
+                root_msg_id: self.root_msg_id,
             });
         };
         Ok(root_msg.clone())
@@ -184,7 +183,7 @@ impl Tangle {
                 .map(|msg_hash| (msg_hash, self.depth.get(msg_hash).unwrap_or(&u64::MAX)))
                 .min_by_key(|&(_, depth)| depth)
                 .unwrap();
-            path.push(min_msg_hash.clone());
+            path.push(*min_msg_hash);
             current = min_msg_hash;
         }
         path

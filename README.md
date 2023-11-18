@@ -4,6 +4,8 @@
 
 ![](https://i.kym-cdn.com/photos/images/original/002/205/488/707.jpg)
 
+[![ci status](https://img.shields.io/github/checks-status/ahdinosaur/ppppp-rs/main?style=flat-square)](https://github.com/ahdinosaur/ppppp-rs/actions/workflows/ci.yml?query=branch%3Amain)
+
 ## specs
 
 - [Scuttlebutt Protocol Guide](https://ssbc.github.io/scuttlebutt-protocol-guide/)
@@ -13,7 +15,6 @@
 - [PPPPP Tangle Dict](https://github.com/staltz/ppppp-dict/blob/master/protospec.md)
 
 ## modules sketch
-
 
 - 🔵: done
 - 🟢: work in progress
@@ -28,14 +29,15 @@
 
 ### base
 
-- 🔵 `ppppp-base58`: base58 with the ppppp alphabet
-- 🟢 `ppppp-crypto`: primitive crypto types and operations used by ppppp
+- 🔵 [`ppppp-base58`](./base58) [![docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square)](https://ahdinosaur.github.io/ppppp-rs/ppppp_base58/index.html) :  base58 with the ppppp alphabet
+- 🟢 [`ppppp-bytes`](./bytes) [![docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square)](https://ahdinosaur.github.io/ppppp-rs/ppppp_bytes/index.html) : traits from and to bytes, with built-in base58 ser/de
+- 🟢 [`ppppp-crypto`](./crypto) [![docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square)](https://ahdinosaur.github.io/ppppp-rs/ppppp_crypto/index.html) : primitive crypto types and operations used by ppppp
   - [sunrise-choir/ssb-crypto](https://github.com/sunrise-choir/ssb-crypto)
 - 🟠 `ppppp-service`: rpc service trait (able to be exposed externally over muxrpc or internally in memory)
 
 ### formats
 
-- 🟢 `ppppp-msg`: ppppp messages and tangles
+- 🟢 [`ppppp-msg`](./msg) [![docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square)](https://ahdinosaur.github.io/ppppp-rs/ppppp_msg/index.html) : ppppp messages and tangles
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/legacy-msg-data](https://github.com/sunrise-choir/legacy-msg-data)
   - [sunrise-choir/ssb-legacy-msg](https://github.com/sunrise-choir/ssb-legacy-msg)
