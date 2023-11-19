@@ -34,6 +34,8 @@
 - 🟢 [`ppppp-crypto`](./crypto) [![docs](https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square)](https://ahdinosaur.github.io/ppppp-rs/ppppp_crypto/index.html) : primitive crypto types and operations used by ppppp
   - [sunrise-choir/ssb-crypto](https://github.com/sunrise-choir/ssb-crypto)
 - 🟠 `ppppp-service`: rpc service trait (able to be exposed externally over muxrpc or internally in memory)
+  - [n0-computer/quic-rpc](https://github.com/n0-computer/quic-rpc)
+  - [google/tarpc](https://github.com/google/tarpc)
 
 ### formats
 
@@ -44,7 +46,6 @@
   - [sunrise-choir/ssb-casual-sort](https://github.com/sunrise-choir/ssb-casual-sort)
   - [sunrise-choir/ssb-validate](https://github.com/sunrise-choir/ssb-validate)
   - [sunrise-choir/ssb-verify-signatures](https://github.com/sunrise-choir/ssb-verify-signatures)
-- 🔴 `ppppp-account`: account helpers for ppppp
 - 🟠 `ppppp-threads`: message thread helpers for ppppp
   - [ssbc/ssb-threads](https://github.com/ssbc/ssb-threads)
 - 🟠 `ppppp-set`: set data structure for ppppp
@@ -58,14 +59,18 @@
 - 🟠 `ppppp-key-store`: key store for ppppp: read keys from a file, write keys to a file
   - [staltz/ppppp-keypair](https://github.com/staltz/ppppp-keypair)
   - [sunrise-choir/ssb-keyfile](https://github.com/sunrise-choir/ssb-keyfile)
+  - [ssbc/ssb-keys](https://github.com/ssbc/ssb-keys)
 - 🔴 `ppppp-msg-log`: append-only log storage with pruning for ppppp
   - [ssbc/async-append-only-log](https://github.com/ssbc/async-append-only-log)
   - [sunrise-choir/flumedb-rs](https://github.com/sunrise-choir/flumedb-rs)
 - 🔴 `ppppp-msg-store`: materialized data views for ppppp
   - [staltz/ppppp-db](https://github.com/staltz/ppppp-db)
   - [sunrise-choir/ssb-db](https://github.com/sunrise-choir/ssb-db)
+  - [ssbc/jitdb](https://github.com/ssbc/jitdb)
 - 🟠 `ppppp-blob-store`: binary data stores for ppppp
+  - [ssbc/ssb-blobs](https://github.com/ssbc/ssb-blobs)
 - 🟠 `ppppp-db`: database for ppppp
+  - [ssbc/ssb-db2](https://github.com/ssbc/ssb-db2)
 
 ### rpc
 
@@ -75,6 +80,7 @@
   - [sunrise-choir/packet-stream-codec-rs](https://github.com/sunrise-choir/packet-stream-codec-rs)
 - 🔴 `ppppp-muxrpc`: multiplexed rpc for ppppp
   - [sunrise-choir/muxrpc-rs](https://github.com/sunrise-choir/muxrpc-rs)
+  - [ssbc/muxrpc](https://github.com/ssbc/muxrpc)
 - 🟠 `ppppp-rpc`: type manifest for ppppp rpc interface
   - [sunrise-choir/ssb-rpc-rs](https://github.com/sunrise-choir/ssb-rpc-rs)
 - 🟠 `ppppp-server`: rpc server for pppppp
