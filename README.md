@@ -4,7 +4,7 @@
 
 ![](https://i.kym-cdn.com/photos/images/original/002/205/488/707.jpg)
 
-[![ci status](https://img.shields.io/github/checks-status/ahdinosaur/ppppp-rs/main?style=flat-square)](https://github.com/ahdinosaur/ppppp-rs/actions/workflows/ci.yml?query=branch%3Amain)
+[![ci status](https://img.shields.io/github/actions/workflow/status/ahdinosaur/ppppp-rs/ci.yml?style=flat-square)](https://github.com/ahdinosaur/ppppp-rs/actions/workflows/ci.yml?query=branch%3Amain)
 
 ## specs
 
