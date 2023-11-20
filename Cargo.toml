@@ -4,5 +4,6 @@ members = [
   "base58",
   "bytes",
   "crypto",
+  "service",
   "msg"
 ]
