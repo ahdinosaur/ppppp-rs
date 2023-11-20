@@ -1,8 +1,38 @@
+// have a trait for each type of method
+
+// sync method
+// async method
+// source method
+// sink method
+// duplex method
+
+// a service is a collection of methods registered at names.
+
+// then have a transport trait,
+//    where a transport is given a service and a duplex connection,
+//    and must route to and from the connection and service methods.
+
 use std::future::Future;
 
-struct MethodName(Vec<String>);
+pub struct Context {}
 
-enum MethodType {
+pub struct Service {
+    context: Context,
+}
+
+impl Service {
+    pub fn call_sync<Request, Method>(
+        &mut self,
+        request: Request,
+    ) -> Result<Method::Response, Method::Error>
+    where
+        Method: SyncMethod<Context, Request>,
+    {
+        Method::call(&mut self.context, request)
+    }
+}
+
+pub enum MethodType {
     Sync,
     Async,
     Source,
@@ -10,51 +40,56 @@ enum MethodType {
     Duplex,
 }
 
-trait SyncMethod<Request> {
-    type Context;
+pub trait Method {
+    fn get_path() -> &'static [&'static str];
+    fn get_type() -> &'static MethodType;
+}
+
+pub trait SyncMethod<Context, Request> {
     type Response;
     type Error;
 
-    fn call(context: &mut Self::Context, request: Request) -> Result<Self::Response, Self::Error>;
+    fn call(context: &mut Context, request: Request) -> Result<Self::Response, Self::Error>;
 }
 
-trait AsyncMethod<Request> {
-    type Context;
+pub trait AsyncMethod<Context, Request> {
     type Response;
     type Error;
     type Future: Future<Output = Result<Self::Response, Self::Error>>;
 
-    fn call(context: &mut Self::Context, request: Request) -> Self::Future;
+    fn call(context: &mut Context, request: Request) -> Self::Future;
 }
 
-trait SourceMethod<Request> {
-    type Context;
+pub trait SourceMethod<Context, Request> {
     type Output;
     type Error;
     type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
 
-    fn call(context: &mut Self::Context, request: Request) -> Self::Source;
+    fn call(context: &mut Context, request: Request) -> Self::Source;
 }
 
-trait SinkMethod<Request> {
-    type Context;
+pub trait SinkMethod<Context, Request> {
     type Input;
     type Error;
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
 
-    fn call(context: &mut Self::Context, request: Request) -> Self::Sink;
+    fn call(context: &mut Context, request: Request) -> Self::Sink;
 }
 
-trait DuplexMethod<Request> {
-    type Context;
+pub trait DuplexMethod<Context, Request> {
     type Input;
     type Output;
     type Error;
     type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
 
-    fn call(context: &mut Self::Context, request: Request) -> (Self::Source, Self::Sink);
+    fn call(context: &mut Context, request: Request) -> (Self::Source, Self::Sink);
 }
+
+// ---
+
+/*
+struct MethodName(Vec<String>);
 
 struct MethodCall<MethodArgs> {
     method_name: MethodName,
@@ -88,17 +123,4 @@ struct Packet {
     end_error: EndErrorFlag,
     stream: StreamFlag,
 }
-
-// have a trait for each type of method
-
-// sync method
-// async method
-// source method
-// sink method
-// duplex method
-
-// a service is a collection of methods registered at names.
-
-// then have a transport trait,
-//    where a transport is given a service and a duplex connection,
-//    and must route to and from the connection and service methods.
+*/
