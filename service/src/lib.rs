@@ -1,3 +1,5 @@
+use std::future::Future;
+
 struct MethodName(Vec<String>);
 
 enum MethodType {
@@ -6,6 +8,52 @@ enum MethodType {
     Source,
     Sink,
     Duplex,
+}
+
+trait SyncMethod<Request> {
+    type Context;
+    type Response;
+    type Error;
+
+    fn call(context: &mut Self::Context, request: Request) -> Result<Self::Response, Self::Error>;
+}
+
+trait AsyncMethod<Request> {
+    type Context;
+    type Response;
+    type Error;
+    type Future: Future<Output = Result<Self::Response, Self::Error>>;
+
+    fn call(context: &mut Self::Context, request: Request) -> Self::Future;
+}
+
+trait SourceMethod<Request> {
+    type Context;
+    type Output;
+    type Error;
+    type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
+
+    fn call(context: &mut Self::Context, request: Request) -> Self::Source;
+}
+
+trait SinkMethod<Request> {
+    type Context;
+    type Input;
+    type Error;
+    type Sink: futures::Sink<Self::Input, Error = Self::Error>;
+
+    fn call(context: &mut Self::Context, request: Request) -> Self::Sink;
+}
+
+trait DuplexMethod<Request> {
+    type Context;
+    type Input;
+    type Output;
+    type Error;
+    type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
+    type Sink: futures::Sink<Self::Input, Error = Self::Error>;
+
+    fn call(context: &mut Self::Context, request: Request) -> (Self::Source, Self::Sink);
 }
 
 struct MethodCall<MethodArgs> {
@@ -51,13 +99,6 @@ struct Packet {
 
 // a service is a collection of methods registered at names.
 
-// then have a transport trait for each of those traits
-//   where each transport is given a connection duplex stream.
-//
-// ... hmm... but the routing needs to happen at the top.
-
-// sync transport
-// async transport
-// source transport
-// sink transport
-// duplex transport
+// then have a transport trait,
+//    where a transport is given a service and a duplex connection,
+//    and must route to and from the connection and service methods.
