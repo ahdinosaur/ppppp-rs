@@ -11,6 +11,16 @@
 // then have a transport trait,
 //    where a transport is given a service and a duplex connection,
 //    and must route to and from the connection and service methods.
+//
+//
+// hmmm....
+// ... how do we handle the trait's associated types?
+// ... there's not really any way to register methods with such generic types.
+//
+// looking at tarpc, should we be thinking of singular service structs, with functions attached.
+//   if one service will call another service, they probably will be separate anyways.
+//   one service can get a client connection to another service.
+//   rather than in SSB where everything is by default able to touch anything else.
 
 use std::future::Future;
 
@@ -21,6 +31,12 @@ pub struct Service {
 }
 
 impl Service {
+    pub fn register_sync<Request, Method>(&mut self)
+    where
+        Method: SyncMethod<Context, Request>,
+    {
+    }
+
     pub fn call_sync<Request, Method>(
         &mut self,
         request: Request,
@@ -46,6 +62,8 @@ pub trait Method {
 }
 
 pub trait SyncMethod<Context, Request> {
+    const PATH: &'static [&'static str];
+
     type Response;
     type Error;
 
