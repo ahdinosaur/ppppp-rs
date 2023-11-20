@@ -22,31 +22,7 @@
 //   one service can get a client connection to another service.
 //   rather than in SSB where everything is by default able to touch anything else.
 
-use std::future::Future;
-
-pub struct Context {}
-
-pub struct Service {
-    context: Context,
-}
-
-impl Service {
-    pub fn register_sync<Request, Method>(&mut self)
-    where
-        Method: SyncMethod<Context, Request>,
-    {
-    }
-
-    pub fn call_sync<Request, Method>(
-        &mut self,
-        request: Request,
-    ) -> Result<Method::Response, Method::Error>
-    where
-        Method: SyncMethod<Context, Request>,
-    {
-        Method::call(&mut self.context, request)
-    }
-}
+use std::{convert::Infallible, future::Future};
 
 pub enum MethodType {
     Sync,
@@ -61,50 +37,74 @@ pub trait Method {
     fn get_type() -> &'static MethodType;
 }
 
-pub trait SyncMethod<Context, Request> {
-    const PATH: &'static [&'static str];
+pub trait SyncMethod<Request> {
+    const NAME: &'static [&'static str];
 
     type Response;
     type Error;
 
-    fn call(context: &mut Context, request: Request) -> Result<Self::Response, Self::Error>;
+    fn call(&mut self, request: Request) -> Result<Self::Response, Self::Error>;
 }
 
-pub trait AsyncMethod<Context, Request> {
+pub trait AsyncMethod<Request> {
+    const NAME: &'static [&'static str];
+
     type Response;
     type Error;
     type Future: Future<Output = Result<Self::Response, Self::Error>>;
 
-    fn call(context: &mut Context, request: Request) -> Self::Future;
+    fn call(&mut self, request: Request) -> Self::Future;
 }
 
-pub trait SourceMethod<Context, Request> {
+pub trait SourceMethod<Request> {
+    const NAME: &'static [&'static str];
+
     type Output;
     type Error;
     type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
 
-    fn call(context: &mut Context, request: Request) -> Self::Source;
+    fn call(&mut self, request: Request) -> Self::Source;
 }
 
-pub trait SinkMethod<Context, Request> {
+pub trait SinkMethod<Request> {
+    const NAME: &'static [&'static str];
+
     type Input;
     type Error;
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
 
-    fn call(context: &mut Context, request: Request) -> Self::Sink;
+    fn call(&mut self, request: Request) -> Self::Sink;
 }
 
-pub trait DuplexMethod<Context, Request> {
+pub trait DuplexMethod<Request> {
+    const NAME: &'static [&'static str];
+
     type Input;
     type Output;
     type Error;
     type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
 
-    fn call(context: &mut Context, request: Request) -> (Self::Source, Self::Sink);
+    fn call(&mut self, request: Request) -> (Self::Source, Self::Sink);
 }
 
 // ---
+
+struct PingService {}
+
+struct Ping {}
+struct Pong {}
+
+impl SyncMethod<Ping> for PingService {
+    const NAME: &'static [&'static str] = ["ping"].as_slice();
+
+    type Response = Pong;
+    type Error = Infallible;
+
+    fn call(&mut self, _request: Ping) -> Result<Self::Response, Self::Error> {
+        Ok(Pong {})
+    }
+}
 
 /*
 struct MethodName(Vec<String>);
