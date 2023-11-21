@@ -47,7 +47,7 @@
 //   where we choose which methods to expose over MuxRPC.
 //   then we can convert these args structs into the top-level enum.
 //
-// 
+//
 
 use std::{convert::Infallible, future::Future};
 
@@ -59,14 +59,12 @@ pub enum MethodType {
     Duplex,
 }
 
-pub trait Method {
-    fn get_path() -> &'static [&'static str];
-    fn get_type() -> &'static MethodType;
+pub trait Method<Request> {
+    const NAME: &'static [&'static str];
+    const TYPE: MethodType;
 }
 
 pub trait SyncMethod<Request> {
-    const NAME: &'static [&'static str];
-
     type Response;
     type Error;
 
@@ -122,9 +120,12 @@ struct PingService {}
 struct Ping {}
 struct Pong {}
 
-impl SyncMethod<Ping> for PingService {
-    const NAME: &'static [&'static str] = ["ping"].as_slice();
+impl Method<Ping> for PingService {
+    const NAME: &'static [&'static str] = &["ping"];
+    const TYPE: MethodType = MethodType::Sync;
+}
 
+impl SyncMethod<Ping> for PingService {
     type Response = Pong;
     type Error = Infallible;
 
