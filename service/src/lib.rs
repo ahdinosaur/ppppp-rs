@@ -59,58 +59,62 @@ pub enum MethodType {
     Duplex,
 }
 
+/*
 pub trait Method<Request> {
     const NAME: &'static [&'static str];
     const TYPE: MethodType;
 }
+*/
 
 pub trait SyncMethod<Request> {
     type Response;
     type Error;
+}
 
-    fn call(&mut self, request: Request) -> Result<Self::Response, Self::Error>;
+pub trait SyncMethodHandler<Request>: SyncMethod<Request> {
+    fn handle(&mut self, request: Request) -> Result<Self::Response, Self::Error>;
 }
 
 pub trait AsyncMethod<Request> {
-    const NAME: &'static [&'static str];
-
     type Response;
     type Error;
     type Future: Future<Output = Result<Self::Response, Self::Error>>;
+}
 
-    fn call(&mut self, request: Request) -> Self::Future;
+pub trait AsyncMethodHandler<Request>: AsyncMethod<Request> {
+    fn handle(&mut self, request: Request) -> Self::Future;
 }
 
 pub trait SourceMethod<Request> {
-    const NAME: &'static [&'static str];
-
     type Output;
     type Error;
     type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
+}
 
-    fn call(&mut self, request: Request) -> Self::Source;
+pub trait SourceMethodHandler<Request>: SourceMethod<Request> {
+    fn handle(&mut self, request: Request) -> Self::Source;
 }
 
 pub trait SinkMethod<Request> {
-    const NAME: &'static [&'static str];
-
     type Input;
     type Error;
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
+}
 
-    fn call(&mut self, request: Request) -> Self::Sink;
+pub trait SinkMethodHandler<Request>: SinkMethod<Request> {
+    fn handle(&mut self, request: Request) -> Self::Sink;
 }
 
 pub trait DuplexMethod<Request> {
-    const NAME: &'static [&'static str];
-
     type Input;
     type Output;
     type Error;
     type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
+}
 
-    fn call(&mut self, request: Request) -> (Self::Source, Self::Sink);
+pub trait DuplexMethodHandler<Request>: DuplexMethod<Request> {
+    fn handle(&mut self, request: Request) -> (Self::Source, Self::Sink);
 }
 
 // ---
@@ -120,16 +124,13 @@ struct PingService {}
 struct Ping {}
 struct Pong {}
 
-impl Method<Ping> for PingService {
-    const NAME: &'static [&'static str] = &["ping"];
-    const TYPE: MethodType = MethodType::Sync;
-}
-
 impl SyncMethod<Ping> for PingService {
     type Response = Pong;
     type Error = Infallible;
+}
 
-    fn call(&mut self, _request: Ping) -> Result<Self::Response, Self::Error> {
+impl SyncMethodHandler<Ping> for PingService {
+    fn handle(&mut self, _request: Ping) -> Result<Self::Response, Self::Error> {
         Ok(Pong {})
     }
 }
