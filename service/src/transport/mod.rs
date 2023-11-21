@@ -20,35 +20,35 @@ pub trait ConnectionErrors: Debug + Clone + Send + Sync + 'static {
 ///
 /// Having this as a separate trait is useful when writing generic code that works with both.
 pub trait ConnectionCommon<In, Out>: ConnectionErrors {
-    /// Receive side of a bidirectional typed channel
+    /// Receive side of a duplex typed channel
     type RecvStream: Stream<Item = Result<In, Self::RecvError>> + Send + Unpin + 'static;
-    /// Send side of a bidirectional typed channel
+    /// Send side of a duplex typed channel
     type SendSink: Sink<Out, Error = Self::SendError> + Send + Unpin + 'static;
 }
 
 /// A connection to a specific remote machine
 ///
-/// A connection can be used to open bidirectional typed channels using [`Connection::open_bi`].
+/// A connection can be used to open duplex typed channels using [`Connection::open`].
 pub trait Connection<In, Out>: ConnectionCommon<In, Out> {
     /// The future that will resolve to a substream or an error
-    type OpenBiFut: Future<Output = Result<(Self::SendSink, Self::RecvStream), Self::OpenError>>
+    type OpenFuture: Future<Output = Result<(Self::SendSink, Self::RecvStream), Self::OpenError>>
         + Send;
     /// Open a channel to the remote
-    fn open_bi(&self) -> Self::OpenBiFut;
+    fn open(&self) -> Self::OpenFuture;
 }
 
 /// A server endpoint that listens for connections
 ///
-/// A server endpoint can be used to accept bidirectional typed channels from any of the
-/// currently opened connections to clients, using [`ServerEndpoint::accept_bi`].
+/// A server endpoint can be used to accept duplex typed channels from any of the
+/// currently opened connections to clients, using [`ServerEndpoint::accept`].
 pub trait ServerEndpoint<In, Out>: ConnectionCommon<In, Out> {
     /// The future that will resolve to a substream or an error
-    type AcceptBiFut: Future<Output = Result<(Self::SendSink, Self::RecvStream), Self::OpenError>>
+    type AcceptFuture: Future<Output = Result<(Self::SendSink, Self::RecvStream), Self::OpenError>>
         + Send;
 
-    /// Accept a new typed bidirectional channel on any of the connections we
+    /// Accept a new typed duplex channel on any of the connections we
     /// have currently opened.
-    fn accept_bi(&self) -> Self::AcceptBiFut;
+    fn accept(&self) -> Self::AcceptFuture;
 
     /// The local addresses this endpoint is bound to.
     fn local_addr(&self) -> &[LocalAddr];

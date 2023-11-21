@@ -47,13 +47,26 @@
 //   where we choose which methods to expose over MuxRPC.
 //   then we can convert these args structs into the top-level enum.
 //
+// okay so heaps of progress following quic-rpc.
+//   requires unified request and response enum.
 //
+// next question:
+// - is it possible to do server mapping automatically?
+//   - or nah?
+// - and if nah, is there a way to make server creation easy anyways?
+//
+// server mapping:
+// - we'd need to map incoming request -> method
+//   - but how... with traits and all that.
+// - (for muxrpc we need to map incoming name + type + args -> request type)
 
 use serde::{de::DeserializeOwned, Serialize};
 use std::{error::Error, fmt::Debug};
 use transport::{Connection, ServerEndpoint};
 
+pub mod client;
 pub mod method;
+pub mod server;
 pub mod transport;
 
 /// Requirements for a [Service] message
