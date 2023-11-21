@@ -20,8 +20,8 @@ pub trait SyncMethod<Request> {
     type Error;
 }
 
-pub trait SyncMethodHandler<Request>: SyncMethod<Request> {
-    fn handle(&mut self, request: Request) -> Result<Self::Response, Self::Error>;
+pub trait SyncMethodHandler<Service: SyncMethod<Request>, Request> {
+    fn handle(&mut self, request: Request) -> Result<Service::Response, Service::Error>;
 }
 
 pub trait AsyncMethod<Request> {
@@ -30,8 +30,8 @@ pub trait AsyncMethod<Request> {
     type Future: Future<Output = Result<Self::Response, Self::Error>>;
 }
 
-pub trait AsyncMethodHandler<Request>: AsyncMethod<Request> {
-    fn handle(&mut self, request: Request) -> Self::Future;
+pub trait AsyncMethodHandler<Service: AsyncMethod<Request>, Request> {
+    fn handle(&mut self, request: Request) -> Service::Future;
 }
 
 pub trait SourceMethod<Request> {
@@ -40,8 +40,8 @@ pub trait SourceMethod<Request> {
     type Source: futures::Stream<Item = Result<Self::Output, Self::Error>>;
 }
 
-pub trait SourceMethodHandler<Request>: SourceMethod<Request> {
-    fn handle(&mut self, request: Request) -> Self::Source;
+pub trait SourceMethodHandler<Service: SourceMethod<Request>, Request> {
+    fn handle(&mut self, request: Request) -> Service::Source;
 }
 
 pub trait SinkMethod<Request> {
@@ -50,8 +50,8 @@ pub trait SinkMethod<Request> {
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
 }
 
-pub trait SinkMethodHandler<Request>: SinkMethod<Request> {
-    fn handle(&mut self, request: Request) -> Self::Sink;
+pub trait SinkMethodHandler<Service: SinkMethod<Request>, Request> {
+    fn handle(&mut self, request: Request) -> Service::Sink;
 }
 
 pub trait DuplexMethod<Request> {
@@ -62,6 +62,6 @@ pub trait DuplexMethod<Request> {
     type Sink: futures::Sink<Self::Input, Error = Self::Error>;
 }
 
-pub trait DuplexMethodHandler<Request>: DuplexMethod<Request> {
-    fn handle(&mut self, request: Request) -> (Self::Source, Self::Sink);
+pub trait DuplexMethodHandler<Service: DuplexMethod<Request>, Request> {
+    fn handle(&mut self, request: Request) -> (Service::Source, Service::Sink);
 }

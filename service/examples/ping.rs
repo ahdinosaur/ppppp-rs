@@ -1,32 +1,54 @@
+use derive_more::{From, TryInto};
+use ppppp_service::{
+    method::{SyncMethod, SyncMethodHandler},
+    Service,
+};
+use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 
-use ppppp_service::method::{SyncMethod, SyncMethodHandler};
+#[derive(Debug, Clone)]
+struct PingService;
 
-#[derive(Debug)]
-struct PingService {}
+impl Service for PingService {
+    type Request = PingServiceRequest;
+    type Response = PingServiceResponse;
+}
 
-#[derive(Debug)]
-struct Ping {}
+#[derive(Debug, Serialize, Deserialize)]
+struct Ping;
 
-#[derive(Debug)]
-struct Pong {}
+#[derive(Debug, Serialize, Deserialize, From, TryInto)]
+enum PingServiceRequest {
+    Ping(Ping),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Pong;
+
+#[derive(Debug, Serialize, Deserialize, From, TryInto)]
+enum PingServiceResponse {
+    Pong(Pong),
+}
 
 impl SyncMethod<Ping> for PingService {
     type Response = Pong;
     type Error = Infallible;
 }
 
-impl SyncMethodHandler<Ping> for PingService {
-    fn handle(&mut self, _request: Ping) -> Result<Self::Response, Self::Error> {
+#[derive(Debug)]
+struct PingServiceHandler;
+
+impl SyncMethodHandler<PingService, Ping> for PingServiceHandler {
+    fn handle(&mut self, _request: Ping) -> Result<Pong, Infallible> {
         Ok(Pong {})
     }
 }
 
 fn main() {
-    let mut service = PingService {};
+    let mut handler = PingServiceHandler {};
 
     let request = Ping {};
-    let response = service.handle(request);
+    let response = handler.handle(request);
 
     println!("response: {:?}", response);
 }
